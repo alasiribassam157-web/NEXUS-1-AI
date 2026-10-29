@@ -1,0 +1,135 @@
+"""Real tools the agent uses. Every file/process operation is confined to WORKSPACE."""
+import os
+import re
+import subprocess
+import sys
+import time
+from dataclasses import dataclass, field
+from pathlib import Path
+
+import httpx
+
+WORKSPACE = Path(__file__).resolve().parent.parent / "workspace"
+WORKSPACE.mkdir(exist_ok=True)
+SAFE_MODE = os.getenv("NEXUS_SAFE_MODE", "0") == "1"
+_BLOCKED = re.compile(r"\b(format|shutdown|diskpart|rmdir\s+/s|rd\s+/s|del\s+/s|reg\s+delete|"
+                      r"rm\s+-rf|mkfs|bcdedit|cipher\s+/w)\b", re.IGNORECASE)
+
+
+@dataclass
+class ToolResult:
+    ok: bool
+    output: str
+    files: list[str] = field(default_factory=list)
+
+
+def _safe_path(name: str) -> Path:
+    """Resolve a user-supplied path and refuse anything outside the workspace."""
+    path = (WORKSPACE / name.strip().strip("\"'")).resolve()
+    if path != WORKSPACE and WORKSPACE not in path.parents:
+        raise PermissionError(f"Path escapes workspace: {name}")
+    return path
+
+
+def _clip(text: str, limit: int = 4000) -> str:
+    return text if len(text) <= limit else text[:limit] + "\n... [truncated]"
+
+
+class PythonExecutorTool:
+    name = "PythonExecutorTool"
+
+    def run(self, code: str, timeout: int = 10) -> ToolResult:
+        if SAFE_MODE:
+            return ToolResult(False, "Python execution is disabled (NEXUS_SAFE_MODE=1).")
+        script = WORKSPACE / f"run_{int(time.time() * 1000)}.py"
+        script.write_text(code, encoding="utf-8")
+        try:
+            proc = subprocess.run([sys.executable, "-I", script.name], cwd=WORKSPACE,
+                                  capture_output=True, text=True, timeout=timeout,
+                                  encoding="utf-8", errors="replace")
+        except subprocess.TimeoutExpired:
+            return ToolResult(False, f"Timed out after {timeout}s", [script.name])
+        out = (proc.stdout + ("\n" + proc.stderr if proc.stderr else "")).strip()
+        return ToolResult(proc.returncode == 0, _clip(out or "(no output)"), [script.name])
+
+
+class FileManagerTool:
+    name = "FileManagerTool"
+
+    def create(self, name: str, content: str = "") -> ToolResult:
+        path = _safe_path(name)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        return ToolResult(True, f"Created {path.relative_to(WORKSPACE)} ({len(content)} chars)",
+                          [str(path.relative_to(WORKSPACE))])
+
+    def read(self, name: str) -> ToolResult:
+        path = _safe_path(name)
+        if not path.is_file():
+            return ToolResult(False, f"File not found: {name}")
+        return ToolResult(True, _clip(path.read_text(encoding="utf-8", errors="replace")))
+
+    def delete(self, name: str) -> ToolResult:
+        path = _safe_path(name)
+        if not path.is_file():
+            return ToolResult(False, f"File not found: {name}")
+        path.unlink()
+        return ToolResult(True, f"Deleted {name}")
+
+    def mkdir(self, name: str) -> ToolResult:
+        path = _safe_path(name)
+        path.mkdir(parents=True, exist_ok=True)
+        return ToolResult(True, f"Folder ready: {path.relative_to(WORKSPACE)}")
+
+    def list(self, folder: str = "") -> ToolResult:
+        root = _safe_path(folder) if folder else WORKSPACE
+        if not root.is_dir():
+            return ToolResult(False, f"Folder not found: {folder}")
+        items = sorted(str(p.relative_to(WORKSPACE)) + ("/" if p.is_dir() else "")
+                       for p in root.rglob("*"))
+        return ToolResult(True, "\n".join(items) or "(workspace is empty)")
+
+
+class WebResearchTool:
+    name = "WebResearchTool"
+    # Wikimedia rejects User-Agents without a project URL (robot policy).
+    _HEADERS = {"User-Agent": "NEXUS-1-Agent/1.0 (https://github.com/topics/nexus-1-ai) python-httpx"}
+
+    def search(self, query: str) -> ToolResult:
+        lang = "ar" if re.search(r"[؀-ۿ]", query) else "en"
+        try:
+            with httpx.Client(timeout=8, headers=self._HEADERS, follow_redirects=True) as http:
+                hits = http.get(f"https://{lang}.wikipedia.org/w/api.php", params={
+                    "action": "query", "list": "search", "srsearch": query,
+                    "format": "json", "srlimit": 3}).json()["query"]["search"]
+                if not hits:
+                    return ToolResult(False, f"No results for: {query}")
+                title = hits[0]["title"]
+                summary = http.get(f"https://{lang}.wikipedia.org/api/rest_v1/page/summary/"
+                                   + title.replace(" ", "_")).json()
+        except (httpx.HTTPError, KeyError, ValueError) as exc:
+            # ValueError covers non-JSON bodies (e.g. a rate-limit page).
+            return ToolResult(False, f"Web request failed: {exc}")
+        others = ", ".join(h["title"] for h in hits[1:])
+        url = summary.get("content_urls", {}).get("desktop", {}).get("page", "")
+        text = f"**{title}**\n{summary.get('extract', '')}\n\nSource: {url}"
+        if others:
+            text += f"\nRelated: {others}"
+        return ToolResult(True, _clip(text))
+
+
+class SystemTaskTool:
+    name = "SystemTaskTool"
+
+    def run(self, command: str, timeout: int = 15) -> ToolResult:
+        if SAFE_MODE:
+            return ToolResult(False, "System commands are disabled (NEXUS_SAFE_MODE=1).")
+        if _BLOCKED.search(command):
+            return ToolResult(False, f"Blocked potentially destructive command: {command}")
+        try:
+            proc = subprocess.run(command, shell=True, cwd=WORKSPACE, capture_output=True,
+                                  text=True, timeout=timeout, errors="replace")
+        except subprocess.TimeoutExpired:
+            return ToolResult(False, f"Timed out after {timeout}s")
+        out = (proc.stdout + ("\n" + proc.stderr if proc.stderr else "")).strip()
+        return ToolResult(proc.returncode == 0, _clip(out or "(no output)"))
