@@ -138,11 +138,11 @@ async function refreshHealth() {
   pill.lastElementChild.textContent = h.model_ready ? t("model_ready") : t("model_missing");
   $("pill-safe").classList.toggle("hidden", !h.safe_mode);
   if (!h.model_ready) setTimeout(refreshHealth, 2000);
+  return h;
 }
 function showGate() { $("gate").classList.replace("hidden", "flex"); }
 $("gate-form").onsubmit = (e) => { e.preventDefault(); token = $("gate-input").value.trim(); store.set("nexus_token", token); location.reload(); };
 
 applyLang(); lucide.createIcons();
 addBot(`<div class="answer">${md(t("welcome"))}</div>`);
-refreshHealth();
-if (token) { loadFiles(); pollTraining(); setInterval(loadFiles, 5000); } else showGate();
+refreshHealth().then((h) => { if (token || !h.auth) { loadFiles(); pollTraining(); setInterval(loadFiles, 5000); } else showGate(); });

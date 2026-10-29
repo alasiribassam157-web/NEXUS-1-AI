@@ -29,6 +29,9 @@ def _load_token() -> str:
 
 
 ACCESS_TOKEN = _load_token()
+# Public (no token) only when code/system execution is disabled; a laptop with
+# full tools exposed through a tunnel must stay token-protected.
+PUBLIC = SAFE_MODE
 app = FastAPI(title="NEXUS-1", version="1.0")
 app.mount("/ui", StaticFiles(directory=ROOT / "ui"), name="ui")
 agent = NexusAgent()
@@ -37,6 +40,8 @@ train_lock = threading.Lock()
 
 
 def require_token(x_nexus_token: str = Header(default=""), token: str = Query(default="")):
+    if PUBLIC:
+        return
     if not secrets.compare_digest((x_nexus_token or token).strip(), ACCESS_TOKEN):
         raise HTTPException(status_code=401, detail="Invalid or missing access token")
 
@@ -78,7 +83,8 @@ def index():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "model_ready": agent.brain.ready, "safe_mode": SAFE_MODE}
+    return {"status": "ok", "model_ready": agent.brain.ready, "safe_mode": SAFE_MODE,
+            "auth": not PUBLIC}
 
 
 @app.post("/api/chat", dependencies=[Depends(require_token)])
