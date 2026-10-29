@@ -5,7 +5,7 @@ its `trycloudflare.com` address changes on every launch. For a fixed `https://`
 address that stays up with the laptop closed, deploy the GitHub repo to one of
 these free hosts. Both build the same `Dockerfile`.
 
-## Option A: Hugging Face Spaces (recommended: 16 GB RAM, free)
+## Option A: Hugging Face Spaces (Docker Spaces now require a PRO subscription)
 
 1. Create an account at https://huggingface.co and go to **New Space**.
 2. Name it `NEXUS-1-AI`, choose **SDK: Docker** and **Blank** template.
