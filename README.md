@@ -10,6 +10,24 @@ pinned: false
 
 # NEXUS-1 — Autonomous AI Platform
 
+## 🔗 Live platform
+
+**https://nexus-1-ai.onrender.com**: hosted 24/7 on Render and redeployed
+automatically on every push to `main`. Open it with `/?token=<your access token>`.
+The token is kept private; it is never stored in this repository.
+
+> If the link shows a loading screen, the free instance is waking from sleep
+> (about one minute after 15 idle minutes).
+
+## 🛠 Development workflow
+
+1. Edit the code (VS Code / Claude Code).
+2. Double-click **`update.bat`**. It runs the smoke tests (`py -m tests.smoke_test`),
+   asks for a short description, commits, and pushes to GitHub.
+3. Render rebuilds and the live link serves the new version within a few minutes.
+
+If tests fail, nothing is pushed, so the live link never breaks.
+
 A self-contained AI platform built from scratch:
 
 - **`core/`** — a custom mini-Transformer (multi-head self-attention, feed-forward,
