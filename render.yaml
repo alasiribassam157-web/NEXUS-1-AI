@@ -7,6 +7,6 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: NEXUS_ACCESS_TOKEN
-        generateValue: true      # Render creates a random secret; copy it from the dashboard
+        sync: false              # Render asks for this value during setup (never stored in git)
       - key: NEXUS_SAFE_MODE
         value: "1"
