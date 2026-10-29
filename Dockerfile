@@ -8,7 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     NEXUS_SAFE_MODE=1
 
 # Hugging Face Spaces runs containers as uid 1000
-RUN useradd -m -u 1000 nexus
+RUN useradd -m -u 1000 nexus && mkdir -p /app && chown nexus:nexus /app
 WORKDIR /app
 
 COPY requirements.txt .
