@@ -37,9 +37,7 @@ function applyLang() {
 $("btn-lang").onclick = () => { lang = lang === "ar" ? "en" : "ar"; store.set("nexus_lang", lang); applyLang(); refreshHealth(); };
 
 // ---------- Chat ----------
-function addUser(text) {
-  $("chat").insertAdjacentHTML("beforeend", `<div class="msg-user">${esc(text)}</div>`);
-}
+const addUser = (text) => $("chat").insertAdjacentHTML("beforeend", `<div class="msg-user">${esc(text)}</div>`);
 function addBot(html) {
   const el = document.createElement("div");
   el.className = "msg-bot";
@@ -130,8 +128,7 @@ async function openFile(name) {
   $("modal-title").textContent = f.name; $("modal-body").textContent = f.content;
   $("modal").classList.replace("hidden", "flex");
 }
-$("modal-close").onclick = () => $("modal").classList.replace("flex", "hidden");
-$("btn-refresh").onclick = loadFiles;
+$("modal-close").onclick = () => $("modal").classList.replace("flex", "hidden"); $("btn-refresh").onclick = loadFiles;
 
 // ---------- Health / gate / boot ----------
 async function refreshHealth() {
@@ -145,8 +142,7 @@ async function refreshHealth() {
 function showGate() { $("gate").classList.replace("hidden", "flex"); }
 $("gate-form").onsubmit = (e) => { e.preventDefault(); token = $("gate-input").value.trim(); store.set("nexus_token", token); location.reload(); };
 
-applyLang();
-lucide.createIcons();
+applyLang(); lucide.createIcons();
 addBot(`<div class="answer">${md(t("welcome"))}</div>`);
 refreshHealth();
 if (token) { loadFiles(); pollTraining(); setInterval(loadFiles, 5000); } else showGate();
