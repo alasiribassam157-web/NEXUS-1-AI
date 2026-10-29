@@ -64,15 +64,28 @@ def _scan(proc: subprocess.Popen, pattern: str, timeout: int = 40) -> str | None
     return None
 
 
+def _runs(exe: Path) -> bool:
+    try:
+        return subprocess.run([str(exe), "--version"], capture_output=True, timeout=15).returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
 def cloudflare() -> tuple[subprocess.Popen, str] | None:
     exe = BIN / "cloudflared.exe"
-    if not exe.exists():
+    if not _runs(exe):
         print("Downloading cloudflared (one-time)...")
         BIN.mkdir(parents=True, exist_ok=True)
+        part = exe.with_suffix(".part")
         try:
-            urllib.request.urlretrieve(CLOUDFLARED_URL, exe)
+            # Download to a temp name so an interrupted download never leaves a broken exe.
+            urllib.request.urlretrieve(CLOUDFLARED_URL, part)
+            part.replace(exe)
         except OSError as exc:
             print(f"cloudflared download failed: {exc}")
+            return None
+        if not _runs(exe):
+            print("cloudflared binary is not runnable.")
             return None
     proc = subprocess.Popen([str(exe), "tunnel", "--no-autoupdate", "--url", LOCAL],
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
