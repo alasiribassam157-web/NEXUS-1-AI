@@ -19,7 +19,8 @@ TOKEN_FILE = ROOT / ".nexus_token"
 
 
 def _load_token() -> str:
-    token = os.getenv("NEXUS_ACCESS_TOKEN")
+    # Strip: dashboard text boxes often add a trailing newline/space when pasting.
+    token = os.getenv("NEXUS_ACCESS_TOKEN", "").strip()
     if token:
         return token
     if not TOKEN_FILE.exists():
@@ -36,7 +37,7 @@ train_lock = threading.Lock()
 
 
 def require_token(x_nexus_token: str = Header(default=""), token: str = Query(default="")):
-    if not secrets.compare_digest(x_nexus_token or token, ACCESS_TOKEN):
+    if not secrets.compare_digest((x_nexus_token or token).strip(), ACCESS_TOKEN):
         raise HTTPException(status_code=401, detail="Invalid or missing access token")
 
 
