@@ -19,6 +19,17 @@ execution), so it opens without an access token. Local full-tools mode still req
 > If the link shows a loading screen, the free instance is waking from sleep
 > (about one minute after 15 idle minutes).
 
+## 👥 Two experiences
+
+- **`/`**: the public chat, a minimal ChatGPT-style page.
+- **`/dev`**: the developer dashboard (password = `NEXUS_ACCESS_TOKEN`). It shows brain size,
+  layers, vocabulary, cumulative training steps, version history, usage statistics,
+  and intent distribution. From it you can train small / medium / large brains and
+  **teach** the brain by correcting misunderstood questions. Corrections are stored in
+  `data/custom_examples.jsonl` and oversampled in the next training run.
+  On the free cloud tier the disk resets on redeploy, so teach on your laptop's `/dev`
+  and run `update.bat` to keep the corrections in git.
+
 ## 🛠 Development workflow
 
 1. Edit the code (VS Code / Claude Code).

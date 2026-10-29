@@ -1,7 +1,11 @@
 """Synthetic bilingual training data generator for intent routing."""
+import json
 import random
+from pathlib import Path
 
 INTENTS = ["chat", "python", "file", "web", "system"]
+CUSTOM_FILE = Path(__file__).resolve().parent.parent / "data" / "custom_examples.jsonl"
+CUSTOM_WEIGHT = 8
 
 SLOTS = {
     "expr": ["2 + 2", "15 * 7", "sqrt(144)", "2 ** 10", "100 / 3", "sum of 1 to 100",
@@ -69,8 +73,25 @@ def _fill(template: str, rng: random.Random) -> str:
     return out
 
 
-def build_dataset(per_intent: int = 400, seed: int = 7) -> list[tuple[str, int]]:
-    """Return a shuffled list of (text, label_index) pairs, balanced per intent."""
+def load_custom() -> list[dict]:
+    """Examples the developer taught from the dashboard (data/custom_examples.jsonl)."""
+    if not CUSTOM_FILE.exists():
+        return []
+    rows = [json.loads(line) for line in CUSTOM_FILE.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return [r for r in rows if r.get("intent") in INTENTS]
+
+
+def add_custom(text: str, intent: str) -> int:
+    if intent not in INTENTS:
+        raise ValueError(f"Unknown intent: {intent}")
+    CUSTOM_FILE.parent.mkdir(exist_ok=True)
+    with CUSTOM_FILE.open("a", encoding="utf-8") as f:
+        f.write(json.dumps({"text": text.strip(), "intent": intent}, ensure_ascii=False) + "\n")
+    return len(load_custom())
+
+
+def build_dataset(per_intent: int = 400, seed: int = 7) -> tuple[list[tuple[str, int]], int]:
+    """Return (shuffled (text, label) pairs, number of taught examples)."""
     rng = random.Random(seed)
     data = []
     for label, intent in enumerate(INTENTS):
@@ -78,8 +99,12 @@ def build_dataset(per_intent: int = 400, seed: int = 7) -> list[tuple[str, int]]
         for _ in range(per_intent):
             text = rng.choice(_PREFIXES) + _fill(rng.choice(templates), rng) + rng.choice(_SUFFIXES)
             data.append((text.strip(), label))
+    custom = load_custom()
+    for row in custom:
+        # Oversample taught examples so a handful of corrections actually move the model.
+        data += [(row["text"], INTENTS.index(row["intent"]))] * CUSTOM_WEIGHT
     rng.shuffle(data)
-    return data
+    return data, len(custom)
 
 
 def train_val_split(data: list, val_ratio: float = 0.15):
@@ -88,5 +113,5 @@ def train_val_split(data: list, val_ratio: float = 0.15):
 
 
 if __name__ == "__main__":
-    for text, label in build_dataset(per_intent=3):
+    for text, label in build_dataset(per_intent=3)[0]:
         print(f"{INTENTS[label]:>7} | {text}")

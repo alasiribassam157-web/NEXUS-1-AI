@@ -15,6 +15,7 @@ class BrainInference:
         self.model = None
         self.tok = None
         self.intents: list[str] = []
+        self.info: dict = {}
         self.reload()
 
     @property
@@ -29,6 +30,8 @@ class BrainInference:
         model.load_state_dict(ckpt["state_dict"])
         model.eval()
         self.model, self.intents = model, ckpt["intents"]
+        self.info = {**ckpt.get("info", {}), **ckpt["config"],
+                     "params": sum(p.numel() for p in model.parameters())}
         self.tok = NexusTokenizer.from_json(ckpt["tokenizer"])
         return True
 

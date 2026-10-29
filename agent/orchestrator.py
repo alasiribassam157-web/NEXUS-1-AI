@@ -62,8 +62,8 @@ class NexusAgent:
 
         if intent == "chat":
             step("result", "Direct reply", "No tool needed.")
-            return {"steps": steps, "answer": CHAT_REPLIES[lang], "files": [],
-                    "intent": intent, "ms": int((time.time() - t0) * 1000)}
+            return {"steps": steps, "answer": CHAT_REPLIES[lang], "files": [], "intent": intent,
+                    "confidence": round(conf, 3), "ms": int((time.time() - t0) * 1000)}
 
         # 3. Plan the tool call and let the critic approve / repair it
         plan = make_plan(message, intent)
@@ -74,7 +74,7 @@ class NexusAgent:
         step("critic", "Pre-execution check", "\n".join(notes), "ok" if approved else "error")
         if not approved:
             return {"steps": steps, "answer": "❌ " + notes[-1], "files": [], "intent": intent,
-                    "ms": int((time.time() - t0) * 1000)}
+                    "confidence": round(conf, 3), "ms": int((time.time() - t0) * 1000)}
 
         # 4. Act, then verify; one self-correcting retry for Python runtime errors
         result = self._execute(plan)
@@ -91,7 +91,7 @@ class NexusAgent:
         step("result", "Final answer", "Verified ✓" if valid else "Unverified — review output",
              "ok" if valid else "warn")
         return {"steps": steps, "answer": answer, "files": result.files, "intent": intent,
-                "ms": int((time.time() - t0) * 1000)}
+                "confidence": round(conf, 3), "ms": int((time.time() - t0) * 1000)}
 
 
 def _preview(args: dict) -> str:
