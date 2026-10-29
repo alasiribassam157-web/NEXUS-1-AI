@@ -13,8 +13,8 @@ pinned: false
 ## 🔗 Live platform
 
 **https://nexus-1-ai.onrender.com**: hosted 24/7 on Render and redeployed
-automatically on every push to `main`. Open it with `/?token=<your access token>`.
-The token is kept private; it is never stored in this repository.
+on every deploy of `main`. The cloud copy runs in safe mode (no code or system
+execution), so it opens without an access token. Local full-tools mode still requires one.
 
 > If the link shows a loading screen, the free instance is waking from sleep
 > (about one minute after 15 idle minutes).
