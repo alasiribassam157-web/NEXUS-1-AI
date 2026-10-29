@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: nexus-1-ai
+    runtime: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: NEXUS_ACCESS_TOKEN
+        generateValue: true      # Render creates a random secret; copy it from the dashboard
+      - key: NEXUS_SAFE_MODE
+        value: "1"

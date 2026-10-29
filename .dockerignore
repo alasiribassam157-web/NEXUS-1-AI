@@ -1,0 +1,10 @@
+.git
+venv/
+.venv/
+__pycache__/
+checkpoints/
+*.pt
+workspace/
+deploy/bin/
+.nexus_token
+PERMANENT_LINK.txt
