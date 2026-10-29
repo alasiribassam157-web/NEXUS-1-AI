@@ -1,0 +1,10 @@
+venv/
+.venv/
+__pycache__/
+checkpoints/
+*.pt
+node_modules/
+workspace/
+logs/
+deploy/bin/
+.nexus_token

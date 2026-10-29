@@ -1,0 +1,24 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Model weights / runtime data
+checkpoints/
+*.pt
+workspace/
+logs/
+
+# Secrets & local links
+.env
+.nexus_token
+PERMANENT_LINK.txt
+
+# Tunnel binaries
+deploy/bin/
+
+# Node / editors
+node_modules/
+.vscode/
+.idea/
