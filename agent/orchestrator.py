@@ -2,11 +2,13 @@
 import re
 import time
 
-from agent import critic
+from agent import critic, safe_math
 from agent.planner import make_plan
 from agent.tools import (FileManagerTool, PythonExecutorTool, SystemTaskTool, ToolResult,
                          WebResearchTool)
 from core.inference import BrainInference
+
+EXEC_ONLY_LOCAL = "This needs code/system execution, which is available only on the developer's machine."
 
 CHAT_REPLIES = {
     "en": "I'm **NEXUS-1**, an autonomous agent with a custom Transformer brain. I can:\n"
@@ -28,19 +30,27 @@ class NexusAgent:
         self.python, self.files = PythonExecutorTool(), FileManagerTool()
         self.web, self.system = WebResearchTool(), SystemTaskTool()
 
-    def _execute(self, plan: dict) -> ToolResult:
+    def _execute(self, plan: dict, allow_exec: bool) -> ToolResult:
         tool, action, args = plan["tool"], plan["action"], plan["args"]
         if tool == "python":
-            return self.python.run(args["code"])
+            if allow_exec:
+                return self.python.run(args["code"])
+            if plan.get("safe"):
+                try:
+                    return ToolResult(True, safe_math.evaluate(plan["safe"]["op"], plan["safe"]["args"]))
+                except (ValueError, ArithmeticError, SyntaxError, TypeError) as exc:
+                    return ToolResult(False, f"Could not calculate: {exc}")
+            return ToolResult(False, EXEC_ONLY_LOCAL)
         if tool == "file":
             return getattr(self.files, action)(**args)
         if tool == "web":
             return self.web.search(args["query"])
         if tool == "system":
-            return self.system.run(args["command"])
+            return self.system.run(args["command"]) if allow_exec else ToolResult(False, EXEC_ONLY_LOCAL)
         raise ValueError(f"Unknown tool {tool}")
 
-    def handle(self, message: str) -> dict:
+    def handle(self, message: str, allow_exec: bool = False) -> dict:
+        """allow_exec: run real Python/system commands (only for the developer's own machine)."""
         t0 = time.time()
         lang = "ar" if re.search(r"[؀-ۿ]", message) else "en"
         steps = []
@@ -77,17 +87,21 @@ class NexusAgent:
                     "confidence": round(conf, 3), "ms": int((time.time() - t0) * 1000)}
 
         # 4. Act, then verify; one self-correcting retry for Python runtime errors
-        result = self._execute(plan)
+        result = self._execute(plan, allow_exec)
         valid, verdict = critic.review_result(plan, result)
-        if not valid and plan["tool"] == "python" and "Traceback" in result.output:
+        if not valid and allow_exec and plan["tool"] == "python" and "Traceback" in result.output:
             fixed = "from math import *\nimport statistics, json, re\n" + plan["args"]["code"]
             step("critic", "Self-correction", "Runtime error — retrying with standard imports.", "warn")
             plan["args"]["code"] = fixed
-            result = self._execute(plan)
+            result = self._execute(plan, allow_exec)
             valid, verdict = critic.review_result(plan, result)
         step("critic", "Post-execution verification", verdict, "ok" if valid else "warn")
 
-        answer = result.output if plan["tool"] == "web" else f"```\n{result.output}\n```"
+        short = "\n" not in result.output and len(result.output) < 160
+        if plan["tool"] == "web" or not result.ok:
+            answer = result.output
+        else:
+            answer = f"**{result.output}**" if short else f"```\n{result.output}\n```"
         step("result", "Final answer", "Verified ✓" if valid else "Unverified — review output",
              "ok" if valid else "warn")
         return {"steps": steps, "answer": answer, "files": result.files, "intent": intent,

@@ -13,8 +13,8 @@ agent = NexusAgent()
 failures = []
 
 
-def check(name: str, message: str, intent: str, expect_in_answer: str = ""):
-    result = agent.handle(message)
+def check(name: str, message: str, intent: str, expect_in_answer: str = "", allow_exec: bool = False):
+    result = agent.handle(message, allow_exec=allow_exec)
     ok = result.get("intent") == intent and expect_in_answer in result["answer"]
     print(f"{'PASS' if ok else 'FAIL'}  {name}")
     if not ok:
@@ -25,10 +25,14 @@ check("chat (en)", "hello there", "chat", "NEXUS-1")
 check("chat (ar)", "مرحبا كيف حالك", "chat", "NEXUS-1")
 check("file create", "create file _smoke.txt with content ok123", "file", "Created")
 check("file read", "read _smoke.txt", "file", "ok123")
+# Public visitors: math runs through the safe evaluator, never as code.
+check("safe calc", "calculate 2 ** 10", "python", "1024")
+check("safe ^ power", "what is 3^4 + 2", "python", "83")
+check("safe arabic", "احسب مضروب 5", "python", "120")
+check("no code for public", "run command `whoami`", "system", "developer's machine")
 if not SAFE_MODE:
-    check("python calc", "calculate 2 ** 10", "python", "1024")
-    check("critic ^ fix", "what is 3^4 + 2", "python", "83")
-    check("arabic math", "احسب مضروب 5", "python", "120")
+    check("python calc", "calculate 2 ** 10", "python", "1024", allow_exec=True)
+    check("arabic math", "احسب مضروب 5", "python", "120", allow_exec=True)
 
 (WORKSPACE / "_smoke.txt").unlink(missing_ok=True)
 for leftover in WORKSPACE.glob("run_*.py"):

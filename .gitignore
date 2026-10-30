@@ -10,6 +10,10 @@ checkpoints/
 workspace/
 logs/
 
+# Developer-only (stays on the laptop)
+devtools/
+.nexus_cloud.json
+
 # Secrets & local links
 .env
 .nexus_token

@@ -2,8 +2,7 @@
 const $ = (id) => document.getElementById(id);
 const store = { get: (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } },
                 set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
-let token = new URLSearchParams(location.search).get("token") || store.get("nexus_token", "");
-if (location.search.includes("token=")) { store.set("nexus_token", token); history.replaceState(null, "", "/"); }
+if (location.search) history.replaceState(null, "", "/");  // drop old ?token= links
 let lang = store.get("nexus_lang", "ar");
 
 const TEXT = {
@@ -49,9 +48,8 @@ async function send(text) {
   $("thread").appendChild(bot);
   $("input").value = ""; autosize(); setBusy(true); scrollDown();
   try {
-    const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json", "X-Nexus-Token": token },
+    const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
                                            body: JSON.stringify({ message: text }) });
-    if (res.status === 401) { bot.remove(); return showGate(); }
     if (!res.ok) throw new Error(res.statusText);
     const data = await res.json();
     bot.querySelector(".body").innerHTML = `<div dir="auto">${md(data.answer)}</div>`;
@@ -64,15 +62,12 @@ async function send(text) {
 
 function setBusy(busy) { $("send").disabled = busy || !$("input").value.trim(); $("send").dataset.busy = busy ? "1" : ""; }
 function autosize() { const el = $("input"); el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 200) + "px"; }
-function showGate() { $("gate").classList.replace("hidden", "flex"); $("gate-input").focus(); }
 
 $("input").addEventListener("input", () => { autosize(); if (!$("send").dataset.busy) setBusy(false); });
 $("input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(e.target.value); } });
 $("form").onsubmit = (e) => { e.preventDefault(); send($("input").value); };
 $("btn-new").onclick = () => { $("thread").innerHTML = ""; $("thread").classList.add("hidden"); $("empty").classList.remove("hidden"); };
 $("btn-lang").onclick = () => { lang = lang === "ar" ? "en" : "ar"; store.set("nexus_lang", lang); applyLang(); };
-$("gate-form").onsubmit = (e) => { e.preventDefault(); token = $("gate-input").value.trim(); store.set("nexus_token", token); location.reload(); };
 
 applyLang();
 setBusy(false);
-fetch("/api/health").then((r) => r.json()).then((h) => { if (h.auth && !token) showGate(); });

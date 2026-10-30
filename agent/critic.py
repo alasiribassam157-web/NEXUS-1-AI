@@ -29,6 +29,9 @@ def review_intent(msg: str, intent: str, confidence: float) -> tuple[str, str]:
     alt = keyword_intent(msg)
     if alt and alt != intent:
         return alt, f"Low confidence ({confidence:.0%}); keyword cross-check prefers '{alt}'."
+    if not alt and intent == "chat":
+        # An unrecognised question is better answered by a search than by the canned greeting.
+        return "web", f"Low confidence ({confidence:.0%}) and no keyword match — answering via web search."
     return intent, f"Low confidence ({confidence:.0%}) but no better alternative — proceeding."
 
 

@@ -12,15 +12,17 @@ SYSTEM_SHORTCUTS = [
     (("computer name", "اسم الجهاز"), "hostname"),
 ]
 
+# (pattern, python template, safe_math recipe used when code execution is not allowed)
 _MATH_PATTERNS = [
-    (r"sum of (\d+) to (\d+)", "print(sum(range({0}, {1} + 1)))"),
-    (r"factorial (?:of )?(\d+)|مضروب (\d+)", "import math\nprint(math.factorial({0}))"),
+    (r"sum of (\d+) to (\d+)|مجموع (?:الاعداد )?من (\d+) (?:الى|إلى) (\d+)",
+     "print(sum(range({0}, {1} + 1)))", "sum_range"),
+    (r"factorial (?:of )?(\d+)|مضروب (?:العدد )?(\d+)", "import math\nprint(math.factorial({0}))", "factorial"),
     (r"fibonacci (\d+)|فيبوناتشي (\d+)",
-     "a, b = 0, 1\nseq = []\nfor _ in range({0}):\n    seq.append(a)\n    a, b = b, a + b\nprint(seq)"),
+     "a, b = 0, 1\nseq = []\nfor _ in range({0}):\n    seq.append(a)\n    a, b = b, a + b\nprint(seq)", "fibonacci"),
     (r"prime(?:s| numbers)? (?:under|below|less than) (\d+)|الاعداد الاولية (?:حتى|اقل من) (\d+)",
-     "print([n for n in range(2, {0}) if all(n % d for d in range(2, int(n ** 0.5) + 1))])"),
+     "print([n for n in range(2, {0}) if all(n % d for d in range(2, int(n ** 0.5) + 1))])", "primes"),
     (r"average of ([\d.,\s]+)|متوسط ([\d.,\s]+)",
-     "nums = [{0}]\nprint(sum(nums) / len(nums))"),
+     "nums = [{0}]\nprint(sum(nums) / len(nums))", "average"),
 ]
 
 
@@ -38,18 +40,21 @@ def plan_python(msg: str) -> dict:
     if block:
         return {"tool": "python", "action": "run", "args": {"code": block.group(1).strip()}}
     text = msg.translate(_AR_DIGITS)
-    for pattern, tpl in _MATH_PATTERNS:
+    for pattern, tpl, recipe in _MATH_PATTERNS:
         m = re.search(pattern, text, re.IGNORECASE)
         if m:
             groups = [g.strip().strip(",") for g in m.groups() if g]
-            return {"tool": "python", "action": "run", "args": {"code": tpl.format(*groups)}}
+            return {"tool": "python", "action": "run", "args": {"code": tpl.format(*groups)},
+                    "safe": {"op": recipe, "args": groups}}
     # Generic arithmetic: keep only math-ish characters / function names.
     expr = re.sub(r"[^0-9+\-*/().%^ a-z_,]", " ", text.lower())
     expr = " ".join(w for w in expr.split() if re.fullmatch(r"[0-9+\-*/().%^,]+|sqrt|pi|e|"
                     r"sin|cos|tan|log|log10|exp|abs|round|pow|floor|ceil", w))
     expr = expr.strip(" ,")
-    code = f"from math import *\nprint({expr})" if expr else "print('No computable expression found')"
-    return {"tool": "python", "action": "run", "args": {"code": code}, "source": "expr"}
+    if not expr:
+        return {"tool": "python", "action": "run", "args": {"code": "print('No computable expression found')"}}
+    return {"tool": "python", "action": "run", "args": {"code": f"from math import *\nprint({expr})"},
+            "source": "expr", "safe": {"op": "expr", "args": [expr]}}
 
 
 def plan_file(msg: str) -> dict:

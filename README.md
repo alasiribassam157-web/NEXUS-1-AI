@@ -13,22 +13,12 @@ pinned: false
 ## 🔗 Live platform
 
 **https://nexus-1-ai.onrender.com**: hosted 24/7 on Render and redeployed
-on every deploy of `main`. The cloud copy runs in safe mode (no code or system
-execution), so it opens without an access token. Local full-tools mode still requires one.
+on every deploy of `main`. Open to everyone, no sign-in. Public visitors get a safe
+experience: answers, search, files, and math through a sandbox-free evaluator, with no code or
+system execution.
 
 > If the link shows a loading screen, the free instance is waking from sleep
 > (about one minute after 15 idle minutes).
-
-## 👥 Two experiences
-
-- **`/`**: the public chat, a minimal ChatGPT-style page.
-- **`/dev`**: the developer dashboard (password = `NEXUS_ACCESS_TOKEN`). It shows brain size,
-  layers, vocabulary, cumulative training steps, version history, usage statistics,
-  and intent distribution. From it you can train small / medium / large brains and
-  **teach** the brain by correcting misunderstood questions. Corrections are stored in
-  `data/custom_examples.jsonl` and oversampled in the next training run.
-  On the free cloud tier the disk resets on redeploy, so teach on your laptop's `/dev`
-  and run `update.bat` to keep the corrections in git.
 
 ## 🛠 Development workflow
 
@@ -68,12 +58,11 @@ py app.py                   # http://localhost:8000
 
 ## Security
 
-All API routes require the access token stored in `.nexus_token` (auto-generated
-on first run, or set `NEXUS_ACCESS_TOKEN`). The links written to
-`PERMANENT_LINK.txt` already include it. Set `NEXUS_SAFE_MODE=1` to disable the
-Python and system-command tools; this is the default in the Docker image.
+No sign-in is needed. Real Python and system-command execution is allowed only for
+requests made from the machine running the server. Requests arriving through a tunnel
+or a cloud proxy are always treated as public. `NEXUS_SAFE_MODE=1` (the Docker default)
+disables execution entirely.
 
 ## Permanent cloud link
 
-See [deploy/DEPLOY.md](deploy/DEPLOY.md) for Hugging Face Spaces (recommended)
-and Render.
+See [deploy/DEPLOY.md](deploy/DEPLOY.md).
