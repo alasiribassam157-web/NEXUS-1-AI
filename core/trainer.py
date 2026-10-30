@@ -1,6 +1,6 @@
 """CPU-friendly training loop for NEXUS brains (time cap, limited threads).
 
-Run directly:  py -m core.trainer [router|coder|all] [small|medium|large]
+Run directly:  py -m core.trainer [router|coder|all] [small|medium|large|xlarge] [epochs]
 Trained weights live in models/ and are committed, so the cloud serves the exact brain you tested.
 """
 import json
@@ -19,14 +19,15 @@ from core.tokenizer import NexusTokenizer
 
 MODELS = Path(__file__).resolve().parent.parent / "models"
 VERSIONS = MODELS / "versions.json"
-MAX_SECONDS = float(os.getenv("NEXUS_MAX_TRAIN_SECONDS", "1200"))  # per brain; protects the laptop
+MAX_SECONDS = float(os.getenv("NEXUS_MAX_TRAIN_SECONDS", "2700"))  # per brain; protects the laptop
 CPU_THREADS = 2      # keep CPU load (and heat) low
-# Goals agreed with the developer: ~1M (reached 2026-10-30, NEXUS-2), then ~2.5M (NEXUS-3).
-TARGET_PARAMS = 2_500_000
+# Goals agreed with the developer: ~1M (NEXUS-2), ~2.5M (NEXUS-3), then ~5M (NEXUS-4).
+TARGET_PARAMS = 5_000_000
 SIZES = {
     "small": dict(d_model=64, n_heads=4, n_layers=2, d_ff=128),
     "medium": dict(d_model=128, n_heads=4, n_layers=3, d_ff=256),
     "large": dict(d_model=192, n_heads=6, n_layers=4, d_ff=384),
+    "xlarge": dict(d_model=256, n_heads=8, n_layers=6, d_ff=512),
 }
 
 
@@ -64,7 +65,8 @@ def train(brain: str = "router", size: str = "medium", epochs: int = 12, batch_s
 
     data, n_custom = build_dataset(brain)
     train_pairs, val_pairs = train_val_split(data)
-    tok = NexusTokenizer(max_len=32).fit([t for t, _ in train_pairs])
+    # min_freq=2 keeps one-off typos out of the vocabulary; the brain learns to read them as <unk>.
+    tok = NexusTokenizer(max_len=32).fit([t for t, _ in train_pairs], min_freq=2)
     x_tr, y_tr = _tensors(train_pairs, tok)
     x_va, y_va = _tensors(val_pairs, tok)
 
@@ -124,7 +126,8 @@ if __name__ == "__main__":
 
     which = sys.argv[1] if len(sys.argv) > 1 else "all"
     size = sys.argv[2] if len(sys.argv) > 2 else "medium"
+    epochs = int(sys.argv[3]) if len(sys.argv) > 3 else 12
     for name in (BRAINS if which == "all" else [which]):
-        result = train(brain=name, size=size, on_epoch=_print)
+        result = train(brain=name, size=size, epochs=epochs, on_epoch=_print)
         print(f"{name} v{result['version']} saved  params={result['params']:,}  steps={result['steps']}"
               f"  val_acc={result['val_acc']}  time={result['seconds']}s")

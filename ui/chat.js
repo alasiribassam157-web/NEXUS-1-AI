@@ -13,6 +13,7 @@ const ICONS = {
   code: '<path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/>', weather: '<circle cx="12" cy="10" r="4"/><path d="M12 2v2M4.9 4.9l1.4 1.4M2 10h2M17.7 6.3l1.4-1.4M7 18h10a3 3 0 0 0 0-6"/>',
   currency: '<circle cx="9" cy="9" r="6"/><path d="M15.5 9.5a6 6 0 1 1-6 6"/>', python: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M12 12h2M16 12h0M8 16h2M12 16h2M16 16h0"/>',
   datetime: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', units: '<path d="M3 17 17 3l4 4L7 21zM7 13l2 2M10 10l2 2M13 7l2 2"/>',
+  prayer: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>', translate: '<path d="M4 5h8M8 3v2M5 9c1.5 3 4 5 7 6M11 5c-1 4-4 8-7 10M14 21l4-9 4 9M15.5 18h5"/>',
   arrow: '<path d="M19 12H5M11 6l-6 6 6 6"/>', link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7L11.5 7M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.5-1.5"/>',
 };
 const svg = (name) => `<svg viewBox="0 0 24 24">${ICONS[name] || ""}</svg>`;
@@ -21,16 +22,17 @@ const T = {
   ar: { eyebrow: "مساعد ذكي بعقل مُدرَّب ذاتياً", hello1: "أهلاً بك،", hello2: "وش تبي تعرف اليوم؟", newChat: "محادثة جديدة",
         placeholder: "اسأل عن أي شيء… معلومة، كود، طقس، عملة", hint: "NEXUS قد يخطئ أحياناً، تحقّق من المعلومات المهمة.",
         error: "تعذّر الوصول للخادم، حاول مرة ثانية.", copy: "نسخ", copied: "تم النسخ ✓", source: "المصدر",
-        cats: { all: "الكل", web: "معرفة", code: "برمجة", weather: "طقس", currency: "عملات", python: "حساب", datetime: "الوقت", units: "تحويل" },
+        cats: { all: "الكل", web: "معرفة", code: "برمجة", weather: "طقس", currency: "عملات", python: "حساب", datetime: "الوقت", units: "تحويل", prayer: "الصلاة", translate: "ترجمة" },
         skills: { chat: "محادثة", file: "ملفات", system: "نظام" } },
   en: { eyebrow: "An assistant with a self-trained brain", hello1: "Welcome,", hello2: "what would you like to know?", newChat: "New chat",
         placeholder: "Ask anything… facts, code, weather, currency", hint: "NEXUS can make mistakes. Verify important information.",
         error: "Couldn't reach the server, please try again.", copy: "Copy", copied: "Copied ✓", source: "Source",
-        cats: { all: "All", web: "Knowledge", code: "Code", weather: "Weather", currency: "Currency", python: "Math", datetime: "Time", units: "Units" },
+        cats: { all: "All", web: "Knowledge", code: "Code", weather: "Weather", currency: "Currency", python: "Math", datetime: "Time", units: "Units", prayer: "Prayer", translate: "Translate" },
         skills: { chat: "Chat", file: "Files", system: "System" } },
 };
 const POPULAR = [
   ["web", "ما هي عاصمة اليابان؟", "What is the capital of Japan?"], ["code", "كيف أعكس نص في بايثون؟", "How to reverse a string in Python"],
+  ["prayer", "مواقيت الصلاة في الرياض", "Prayer times in Mecca"], ["translate", "ترجم صقر للانجليزي", "How do you say coffee in Arabic?"],
   ["weather", "كيف الجو في الرياض؟", "Weather in Riyadh"], ["currency", "كم سعر الدولار بالريال؟", "Convert 100 USD to EUR"],
   ["web", "كم ارتفاع برج خليفة؟", "How tall is Mount Everest?"], ["python", "كم 15٪ من 200؟", "What is 15% of 200"],
   ["web", "من مؤسس جوجل؟", "Who founded Tesla?"], ["web", "من هو ابن سينا؟", "Who was Albert Einstein?"],
@@ -38,6 +40,7 @@ const POPULAR = [
   ["web", "اشرح لي الثقب الأسود", "Explain photosynthesis"], ["units", "حول 10 كيلومتر الى ميل", "Convert 5 miles to km"],
   ["web", "كم عدد سكان مصر؟", "Population of France"], ["code", "كيف أقرأ ملف في جافا؟", "Parse JSON in JavaScript"],
   ["weather", "الطقس في دبي", "Weather in London"], ["currency", "حول 100 يورو الى ريال", "How much is 50 GBP in dollars"],
+  ["web", "من مدرب ريال مدريد؟", "Which team does Lionel Messi play for?"], ["prayer", "متى أذان المغرب في جدة؟", "When is maghrib in Cairo?"],
   ["python", "احسب مضروب 10", "Calculate 2 ** 16"], ["units", "100 فهرنهايت كم مئوية", "Convert 70 kg to pounds"],
 ];
 const t = (k) => T[lang][k];

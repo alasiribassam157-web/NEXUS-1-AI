@@ -1,12 +1,13 @@
 """Runs an approved plan with the right tool or skill."""
-from agent import live_skills, safe_math, units
+from agent import live_skills, prayer, safe_math, translate, units
 from agent.coder import CoderSkill
 from agent.tools import FileManagerTool, PythonExecutorTool, SystemTaskTool, ToolResult, WebResearchTool
 
 EXEC_ONLY_LOCAL = "This needs code/system execution, which is available only on the developer's machine."
 TOOL_NAMES = {"python": "PythonExecutorTool", "file": "FileManagerTool", "web": "WebResearchTool",
               "system": "SystemTaskTool", "code": "CoderSkill", "weather": "WeatherSkill",
-              "currency": "CurrencySkill", "datetime": "DateTimeSkill", "units": "UnitsSkill"}
+              "currency": "CurrencySkill", "datetime": "DateTimeSkill", "units": "UnitsSkill",
+              "prayer": "PrayerTimesSkill", "translate": "TranslateSkill"}
 
 
 class Dispatcher:
@@ -45,4 +46,8 @@ class Dispatcher:
             return live_skills.date_time(args["query"])
         if tool == "units":
             return units.convert(args["query"])
+        if tool == "prayer":
+            return prayer.prayer_times(args["query"])
+        if tool == "translate":
+            return translate.translate(args["query"])
         raise ValueError(f"Unknown tool {tool}")

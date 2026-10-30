@@ -21,6 +21,8 @@ _KEYWORDS = {
     "weather": ["weather", "temperature", "الطقس", "طقس", "الجو", "درجة الحرارة", "مطر", "rain"],
     "currency": ["exchange rate", "سعر صرف", "سعر الدولار", "دولار", "ريال", "يورو", "currency", "usd", "eur"],
     "datetime": ["what time", "الساعة", "الساعه", "التاريخ اليوم", "هجري", "الهجري", "today's date", "hijri"],
+    "prayer": ["الصلاة", "صلاة", "اذان", "أذان", "prayer", "fajr", "maghrib", "الفجر", "المغرب", "العشاء"],
+    "translate": ["ترجم", "translate", "بالانجليزي", "بالإنجليزي", "بالعربي", "in arabic", "in english", "معنى"],
     "units": ["convert", "حول", "كيلومتر", "ميل", "رطل", "فهرنهايت", "mile", "km", "kg", "feet", "pounds"],
 }
 

@@ -1,7 +1,9 @@
 """Training templates for the router brain: which skill should answer a message."""
+from core import templates_extra
 from core.templates_code import PHRASES
 
-INTENTS = ["chat", "python", "file", "web", "system", "code", "weather", "currency", "datetime", "units"]
+INTENTS = ["chat", "python", "file", "web", "system", "code", "weather", "currency", "datetime", "units",
+           "prayer", "translate"]
 
 SLOTS = {
     "expr": ["2 + 2", "15 * 7", "sqrt(144)", "2 ** 10", "100 / 3", "sum of 1 to 100",
@@ -122,3 +124,8 @@ TEMPLATES = {
         "تحويل {n} {unit} الى {unit}",
     ],
 }
+
+# NEXUS-4: prayer times, translation, sports and Levantine/Egyptian dialects (core/templates_extra.py)
+SLOTS.update(templates_extra.SLOTS)
+for _intent, _extra in templates_extra.TEMPLATES.items():
+    TEMPLATES.setdefault(_intent, []).extend(_extra)

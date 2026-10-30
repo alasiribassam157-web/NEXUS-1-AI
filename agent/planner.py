@@ -117,7 +117,7 @@ def plan_system(msg: str) -> dict:
 
 
 PLANNERS = {"python": plan_python, "file": plan_file, "web": plan_web, "system": plan_system}
-SKILLS = ("code", "weather", "currency", "datetime", "units")  # answered by dedicated skills
+SKILLS = ("code", "weather", "currency", "datetime", "units", "prayer", "translate")  # answered by dedicated skills
 
 
 def make_plan(msg: str, intent: str) -> dict:

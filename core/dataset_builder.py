@@ -8,11 +8,12 @@ from core import templates_code, templates_router
 INTENTS = templates_router.INTENTS
 CUSTOM_FILE = Path(__file__).resolve().parent.parent / "data" / "custom_examples.jsonl"
 CUSTOM_WEIGHT = 8
+TYPO_RATE = 0.12  # share of examples that get one realistic spelling mistake
 
 # brain name -> (labels, templates, slots, examples per label)
 BRAINS = {
-    "router": (templates_router.INTENTS, templates_router.TEMPLATES, templates_router.SLOTS, 2200),
-    "coder": (templates_code.CODE_TASKS, templates_code.TEMPLATES, templates_code.SLOTS, 450),
+    "router": (templates_router.INTENTS, templates_router.TEMPLATES, templates_router.SLOTS, 4000),
+    "coder": (templates_code.CODE_TASKS, templates_code.TEMPLATES, templates_code.SLOTS, 700),
 }
 
 _PREFIXES = ["", "", "", "", "please ", "can you ", "nexus ", "من فضلك ", "لو سمحت ", "ابغى ", "ابي ", "i want to ",
@@ -27,6 +28,25 @@ def _fill(template: str, slots: dict, rng: random.Random) -> str:
         while token in out:
             out = out.replace(token, rng.choice(values), 1)
     return " ".join(out.split())
+
+
+def _typo(text: str, rng: random.Random) -> str:
+    """Swap, drop or double one letter in a longer word: «الطقس» -> «الطفس» / «الطس» / «الطققس»."""
+    words = text.split()
+    long_words = [i for i, w in enumerate(words) if len(w) >= 4 and w.isalpha()]
+    if not long_words:
+        return text
+    i = rng.choice(long_words)
+    w, j = words[i], rng.randrange(1, len(words[i]) - 1)
+    kind = rng.random()
+    if kind < 0.4:
+        w = w[:j] + w[j + 1] + w[j] + w[j + 2:]
+    elif kind < 0.7:
+        w = w[:j] + w[j + 1:]
+    else:
+        w = w[:j] + w[j] + w[j:]
+    words[i] = w
+    return " ".join(words)
 
 
 def load_custom(brain: str = "router") -> list[dict]:
@@ -58,6 +78,8 @@ def build_dataset(brain: str = "router", seed: int = 7) -> tuple[list[tuple[str,
     for label, name in enumerate(labels):
         for _ in range(per_label):
             text = rng.choice(_PREFIXES) + _fill(rng.choice(templates[name]), slots, rng) + rng.choice(_SUFFIXES)
+            if rng.random() < TYPO_RATE:
+                text = _typo(text, rng)
             data.append((text.strip(), label))
     custom = load_custom(brain)
     for row in custom:

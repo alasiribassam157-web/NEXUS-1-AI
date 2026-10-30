@@ -5,6 +5,8 @@ __pycache__/
 checkpoints/
 devtools/
 .nexus_cloud.json
+.render_hook
+data/cloud_questions.jsonl
 workspace/
 deploy/bin/
 .nexus_token

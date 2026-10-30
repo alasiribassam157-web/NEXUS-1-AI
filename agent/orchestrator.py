@@ -9,7 +9,7 @@ from agent.memory import ConversationMemory
 from agent.planner import make_plan
 from core.inference import BrainInference
 
-FORMATTED_TOOLS = ("web", "code", "weather", "currency", "datetime", "units")  # already markdown
+FORMATTED_TOOLS = ("web", "code", "weather", "currency", "datetime", "units", "prayer", "translate")  # already markdown
 
 
 class NexusAgent:

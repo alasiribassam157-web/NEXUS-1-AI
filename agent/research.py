@@ -7,10 +7,12 @@ HEADERS = {"User-Agent": "NEXUS-1-Agent/1.0 (https://github.com/topics/nexus-1-a
 _DIACRITICS = re.compile(r"[ً-ْٰـ]")
 _PREFIXES = re.compile(
     r"^(?:من فضلك|لو سمحت|please|can you|could you|nexus|"
-    r"ابحث(?: في (?:الانترنت|الإنترنت|النت))? عن|ابحث|معلومات عن|اعطني معلومات عن|أعطني معلومات عن|"
+    r"ابحث(?: في (?:الانترنت|الإنترنت|النت))? عن|ابحث|اعطني معلومات عن|أعطني معلومات عن|عطني معلومات عن|"
+    r"معلومات عن|قلي عن|قل لي عن|ابغى اعرف عن|ابي اعرف عن|"
     r"اخبرني عن|أخبرني عن|تكلم عن|حدثني عن|اشرح لي|اشرح|عرف|عرّف|وش هو|وش هي|ايش هو|ايش هي|"
     r"ما هو|ما هي|ماهو|ماهي|ما معنى|من هو|من هي|من هم|من كان|أين يقع|اين يقع|أين تقع|اين تقع|"
-    r"أين|اين|متى|لماذا|ليش|كيف|"
+    r"أين|اين|متى|لماذا|ليش|كيف|شو هو|شو هي|شو يعني|ايه هو|ايه هي|يعني ايه|مين هو|مين هي|مين|فين|وين بيقع|وين|"
+    r"امتى|ازاي|ليه|عايز اعرف عن|بدي اعرف عن|"
     r"search(?: the web)? for|find information about|information about|tell me about|tell me|"
     r"what do you know about|look up|research|google|explain|define|"
     r"what is|what are|what was|what's|who is|who was|who were|who are|where is|where was|"
@@ -63,7 +65,7 @@ def lookup(question: str, lang: str) -> tuple[str, str, str] | None:
     if topic != question:
         attempts.append({"generator": "search", "gsrsearch": question, "gsrlimit": 1})
     sentences = answer_length(question)
-    with httpx.Client(timeout=8, headers=HEADERS, follow_redirects=True) as http:
+    with httpx.Client(timeout=15, headers=HEADERS, follow_redirects=True) as http:
         page = next((p for params in attempts if (p := _query(http, lang, params, sentences))), None)
         if not page and lang == "ar":
             page = _english_fallback(http, topic, sentences)

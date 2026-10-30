@@ -23,5 +23,12 @@ if "%MSG%"=="" set "MSG=Update NEXUS-1"
 echo [3/3] Pushing to GitHub...
 "%GIT%" push
 echo.
-echo Done. GitHub is updated and Render redeploys the live link automatically in a few minutes.
+rem Private Render Deploy Hook URL (gitignored): triggers the redeploy without opening Render.
+set "HOOK="
+if exist ".render_hook" set /p HOOK=<.render_hook
+if defined HOOK (
+    curl -s -X POST "%HOOK%" >nul && echo Render deploy started - the live link updates in about 5 minutes.
+) else (
+    echo Done. Now open Render and click Manual Deploy - Deploy latest commit.
+)
 pause

@@ -23,7 +23,8 @@ def _label(http: httpx.Client, qid: str, lang: str) -> str:
     data = http.get(API, params={"action": "wbgetentities", "ids": qid, "props": "labels",
                                  "languages": f"{lang}|en", "format": "json"}).json()
     labels = data["entities"][qid]["labels"]
-    return (labels.get(lang) or labels.get("en") or {"value": qid})["value"]
+    value = (labels.get(lang) or labels.get("en") or {"value": qid})["value"]
+    return re.sub(r"[‎‏]", "", value)  # some Arabic labels carry invisible direction marks
 
 
 def _best_claim(claims: list) -> dict | None:
@@ -62,6 +63,9 @@ def _format(value: dict, claim: dict, http: httpx.Client, lang: str) -> tuple[st
 
 def answer_fact(question: str, lang: str) -> tuple[str, str, str] | None:
     """Return (answer markdown, source url, entity name) or None if not a known relation."""
+    # Common spelling: a final «ه» written for «ة» (عاصمه، مكه) should still match the patterns.
+    if re.search(r"(?:عاصمه|مساحه|عمله|اللغه)", question):
+        question = re.sub(r"(?<=\w)ه\b", "ة", question)
     for prop, pattern, tpl_ar, tpl_en in RELATIONS:
         m = re.search(pattern, question, re.IGNORECASE)
         if not m:

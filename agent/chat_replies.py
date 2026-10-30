@@ -10,9 +10,9 @@ ABOUT = {
 
 # (keywords, Arabic reply, English reply); first match wins
 RULES = [
-    (("شكرا", "شكراً", "مشكور", "يعطيك العافية", "thank", "thanks", "thx"),
+    (("شكرا", "شكراً", "مشكور", "يعطيك العافية", "يسلمو", "تسلم", "متشكر", "thank", "thanks", "thx"),
      "العفو! 😊 إذا عندك سؤال ثاني أنا حاضر.", "You're welcome! 😊 Ask me anything else."),
-    (("كيف حالك", "كيفك", "شلونك", "شخبارك", "وش اخبارك", "how are you", "how's it going", "what's up"),
+    (("كيف حالك", "كيفك", "شلونك", "شخبارك", "وش اخبارك", "ازيك", "عامل ايه", "شو الاخبار", "how are you", "how's it going", "what's up"),
      "بخير الحمد لله، شكراً لسؤالك! كيف أقدر أساعدك؟", "I'm doing great, thanks! How can I help?"),
     (("تصبح على خير", "good night"), "وأنت من أهله! 🌙", "Good night! 🌙"),
     (("تمام", "ممتاز", "اوكي", "ok", "okay", "cool", "nice", "great job", "انت ذكي", "you're smart"),
@@ -26,7 +26,7 @@ RULES = [
 ]
 
 
-GREETINGS = ("مرحبا", "اهلا", "أهلا", "هلا", "هلا والله", "ياهلا", "هاي", "hello", "hi", "hey", "hey there", "nexus")
+GREETINGS = ("مرحبا", "اهلا", "أهلا", "هلا", "هلا والله", "ياهلا", "اهلين", "مرحبتين", "صباحو", "هاي", "hello", "hi", "hey", "hey there", "nexus")
 
 
 def _has(text: str, word: str) -> bool:

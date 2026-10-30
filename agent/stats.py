@@ -26,7 +26,7 @@ class UsageStats:
             self.verified += ok
             self.recent.appendleft({"text": message[:200], "intent": intent, "ok": ok,
                                     "confidence": result.get("confidence"),
-                                    "time": time.strftime("%H:%M:%S")})
+                                    "time": time.strftime("%H:%M:%S"), "date": time.strftime("%Y-%m-%d")})
 
     def snapshot(self) -> dict:
         with self._lock:

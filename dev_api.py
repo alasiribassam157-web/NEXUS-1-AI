@@ -20,6 +20,8 @@ from core.dataset_builder import BRAINS, INTENTS, add_custom, load_custom
 ROOT = Path(__file__).resolve().parent
 CLOUD_KEY = os.getenv("NEXUS_ACCESS_TOKEN", "").strip()
 CLOUD_CFG = ROOT / ".nexus_cloud.json"
+# Every question people asked online, kept on the laptop (gitignored: the repo is public, questions are private).
+ARCHIVE = ROOT / "data" / "cloud_questions.jsonl"
 # Tunnels and cloud proxies add these; a request carrying any of them is not from this machine.
 _PROXY_HEADERS = ("x-forwarded-for", "cf-connecting-ip", "x-real-ip", "forwarded")
 
@@ -53,6 +55,20 @@ def _benchmark() -> dict:
         return json.loads((trainer.MODELS / "benchmark.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
+
+
+def _archive(recent: list[dict]) -> list[dict]:
+    """Append unseen cloud questions to the local archive and return the newest 200 of it."""
+    rows = []
+    if ARCHIVE.exists():
+        rows = [json.loads(line) for line in ARCHIVE.read_text(encoding="utf-8").splitlines() if line.strip()]
+    seen = {(r.get("date", ""), r["time"], r["text"]) for r in rows}
+    new = [r for r in reversed(recent) if (r.get("date", ""), r["time"], r["text"]) not in seen]
+    if new:
+        ARCHIVE.parent.mkdir(exist_ok=True)
+        with ARCHIVE.open("a", encoding="utf-8") as f:
+            f.writelines(json.dumps(r, ensure_ascii=False) + "\n" for r in new)
+    return list(reversed(rows + new))[:200]
 
 
 def build_router(agent, stats, job) -> APIRouter:
@@ -104,6 +120,9 @@ def build_router(agent, stats, job) -> APIRouter:
             res.raise_for_status()
         except httpx.HTTPError as exc:
             return {"configured": True, "url": cfg["url"], "error": str(exc)}
-        return {"configured": True, "url": cfg["url"], **res.json()}
+        data = res.json()
+        data["usage"]["recent"] = _archive(data["usage"].get("recent", []))  # survives Render restarts
+        data["archived"] = sum(1 for _ in ARCHIVE.open(encoding="utf-8")) if ARCHIVE.exists() else 0
+        return {"configured": True, "url": cfg["url"], **data}
 
     return router

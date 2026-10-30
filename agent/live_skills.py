@@ -32,7 +32,7 @@ def weather(question: str) -> ToolResult:
     match = next((m for p in _CITY_PATTERNS if (m := p.search(text))), None)
     city = (match.group(1).strip() if match else "") or ("الرياض" if lang == "ar" else "Riyadh")
     try:
-        with httpx.Client(timeout=10, headers=HEADERS) as http:
+        with httpx.Client(timeout=15, headers=HEADERS) as http:
             places = http.get("https://geocoding-api.open-meteo.com/v1/search",
                               params={"name": city, "count": 1, "language": lang}).json().get("results")
             if not places:
