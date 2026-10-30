@@ -2,17 +2,26 @@
 import re
 
 from agent.chat_replies import is_small_talk
+from agent.code_kb import detect_language
+from agent.live_skills import find_currencies
 from agent.tools import WORKSPACE, ToolResult, _BLOCKED
 
 CONFIDENCE_FLOOR = 0.60
 
 # Independent keyword router used to cross-check low-confidence neural predictions.
 _KEYWORDS = {
-    "python": ["calculate", "compute", "python", "code", "احسب", "كود", "بايثون", "```", "كم يساوي"],
-    "file": ["file", "folder", "directory", ".txt", ".md", ".csv", ".py", ".json", "ملف", "مجلد", "الملفات"],
+    "python": ["calculate", "compute", "احسب", "```", "كم يساوي"],
+    "file": ["file", "folder", "directory", ".txt", ".md", ".csv", ".json", "ملف", "مجلد", "الملفات"],
     "web": ["search", "who is", "tell me about", "news", "ابحث", "معلومات عن", "من هو", "اخبار"],
     "system": ["command", "terminal", "ipconfig", "tasklist", "systeminfo", "الامر", "الأمر", "النظام"],
     "chat": ["hello", "hi", "thanks", "who are you", "مرحبا", "شكرا", "من انت", "كيف حالك"],
+    "code": ["code", "كود", "function", "دالة", "loop", "لوب", "حلقة", "class", "كلاس", "array", "مصفوفة", "string",
+             "برمجة", "sort", "رتب", "reverse", "اعكس", "json", "http", "api", "dictionary", "قاموس", "variable",
+             "متغير", "exception", "try catch", "hello world", "list", "قائمة", "فنكشن", "random", "عشوائي"],
+    "weather": ["weather", "temperature", "الطقس", "طقس", "الجو", "درجة الحرارة", "مطر", "rain"],
+    "currency": ["exchange rate", "سعر صرف", "سعر الدولار", "دولار", "ريال", "يورو", "currency", "usd", "eur"],
+    "datetime": ["what time", "الساعة", "الساعه", "التاريخ اليوم", "هجري", "الهجري", "today's date", "hijri"],
+    "units": ["convert", "حول", "كيلومتر", "ميل", "رطل", "فهرنهايت", "mile", "km", "kg", "feet", "pounds"],
 }
 
 
@@ -37,9 +46,17 @@ def review_intent(msg: str, intent: str, confidence: float) -> tuple[str, str]:
     final, note = _review_confidence(msg, intent, confidence)
     text = msg.translate(str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789"))
     if final == "python" and not _MATH.search(text):
+        if detect_language(msg):
+            return "code", note + " A programming language is named but no math — answering as a coding question."
         return "web", note + " No math found in the question — answering via web search instead."
-    if final in ("web", "chat") and _STRONG_MATH.search(text):
+    if final in ("web", "chat", "currency", "units") and _STRONG_MATH.search(text):
         return "python", note + " The question contains arithmetic — calculating instead."
+    if final in ("weather", "datetime", "currency", "units") and detect_language(msg):
+        return "code", note + " A programming language is named — answering as a coding question."
+    if final == "code" and not detect_language(msg) and keyword_intent(msg) != "code":
+        return "web", note + " No programming language or coding words — answering via web search instead."
+    if final == "units" and len(set(find_currencies(msg))) >= 2:
+        return "currency", note + " Two currencies are named — converting money, not units."
     if final == "chat" and not is_small_talk(msg):
         return "web", note + " Not small talk — answering via web search instead."
     return final, note
@@ -102,6 +119,8 @@ def review_plan(plan: dict) -> tuple[bool, dict, list[str]]:
         if len(args.get("query", "")) < 2:
             return False, plan, ["Search query is empty."]
         notes.append(f"Query: “{args['query']}”.")
+    else:
+        notes.append(f"Skill input accepted: “{args.get('query', '')[:120]}”.")
     return True, plan, notes
 
 
@@ -118,4 +137,6 @@ def review_result(plan: dict, result: ToolResult) -> tuple[bool, str]:
         return False, "Runtime traceback detected."
     if plan["tool"] == "web" and "🔗 http" not in result.output:
         return False, "No verifiable source returned."
+    if plan["tool"] == "code" and "```" not in result.output:
+        return False, "No code block in the answer."
     return True, "Result validated."

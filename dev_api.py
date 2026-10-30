@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 from agent.tools import WORKSPACE
 from core import trainer
-from core.dataset_builder import INTENTS, add_custom, load_custom
+from core.dataset_builder import BRAINS, INTENTS, add_custom, load_custom
 
 ROOT = Path(__file__).resolve().parent
 CLOUD_KEY = os.getenv("NEXUS_ACCESS_TOKEN", "").strip()
@@ -37,13 +37,22 @@ def require_dev(request: Request):
 
 
 class TrainIn(BaseModel):
-    size: str = "small"
+    brain: str = "all"
+    size: str = "medium"
     epochs: int = 12
 
 
 class TeachIn(BaseModel):
     text: str
     intent: str
+    brain: str = "router"
+
+
+def _benchmark() -> dict:
+    try:
+        return json.loads((trainer.MODELS / "benchmark.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
 
 
 def build_router(agent, stats, job) -> APIRouter:
@@ -51,14 +60,18 @@ def build_router(agent, stats, job) -> APIRouter:
 
     @router.get("/overview")
     def overview():
-        return {"brain": agent.brain.info, "usage": stats.snapshot(), "versions": trainer.load_versions(),
-                "taught": len(load_custom()), "intents": INTENTS, "sizes": list(trainer.SIZES)}
+        brains = {name: b.info for name, b in agent.brains.items()}
+        return {"brain": agent.brain.info, "brains": brains, "usage": stats.snapshot(),
+                "total_params": sum(info.get("params", 0) for info in brains.values()),
+                "target_params": trainer.TARGET_PARAMS, "benchmark": _benchmark(),
+                "versions": trainer.load_versions(), "taught": sum(len(load_custom(n)) for n in BRAINS),
+                "intents": INTENTS, "sizes": list(trainer.SIZES)}
 
     @router.post("/train")
     def train(body: TrainIn):
-        if body.size not in trainer.SIZES:
-            raise HTTPException(400, f"size must be one of {list(trainer.SIZES)}")
-        return {"started": job.start(body.size, max(1, min(body.epochs, 60)))}
+        if body.size not in trainer.SIZES or body.brain not in (*BRAINS, "all"):
+            raise HTTPException(400, f"size must be one of {list(trainer.SIZES)}; brain router|coder|all")
+        return {"started": job.start(body.brain, body.size, max(1, min(body.epochs, 60)))}
 
     @router.get("/train/status")
     def train_status():
@@ -66,9 +79,9 @@ def build_router(agent, stats, job) -> APIRouter:
 
     @router.post("/teach")
     def teach(body: TeachIn):
-        if body.intent not in INTENTS or not body.text.strip():
-            raise HTTPException(400, f"intent must be one of {INTENTS} and text non-empty")
-        return {"taught": add_custom(body.text, body.intent)}
+        if body.brain not in BRAINS or body.intent not in BRAINS[body.brain][0] or not body.text.strip():
+            raise HTTPException(400, "unknown brain/label or empty text")
+        return {"taught": add_custom(body.text, body.intent, body.brain)}
 
     @router.get("/files")
     def files():

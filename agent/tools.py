@@ -24,6 +24,7 @@ class ToolResult:
     ok: bool
     output: str
     files: list[str] = field(default_factory=list)
+    entity: str = ""  # main subject of the answer, remembered for follow-up questions
 
 
 def _safe_path(name: str) -> Path:
@@ -100,7 +101,7 @@ class WebResearchTool:
         lang = "ar" if re.search(r"[؀-ۿ]", question) else "en"
         fact = answer_fact(question, lang)
         if fact:
-            return ToolResult(True, f"{fact[0]}\n\n🔗 {fact[1]}")
+            return ToolResult(True, f"{fact[0]}\n\n🔗 {fact[1]}", entity=fact[2])
         try:
             found = lookup(question, lang)
         except (httpx.HTTPError, KeyError, ValueError) as exc:
@@ -110,7 +111,7 @@ class WebResearchTool:
             return ToolResult(False, "لم أجد إجابة لهذا السؤال." if lang == "ar"
                               else "I couldn't find an answer to that.")
         title, text, url = found
-        return ToolResult(True, _clip(f"**{title}**\n\n{text}\n\n🔗 {url}"))
+        return ToolResult(True, _clip(f"**{title}**\n\n{text}\n\n🔗 {url}"), entity=title)
 
 
 class SystemTaskTool:

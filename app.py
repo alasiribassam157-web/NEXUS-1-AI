@@ -22,18 +22,19 @@ app = FastAPI(title="NEXUS-1", version="3.0")
 app.mount("/ui", StaticFiles(directory=ROOT / "ui"), name="ui")
 agent = NexusAgent()
 stats = UsageStats()
-job = TrainingJob(on_done=agent.brain.reload)
+job = TrainingJob(on_done=lambda name: agent.brains[name].reload())
 app.include_router(dev_api.build_router(agent, stats, job))
 
 
 class ChatIn(BaseModel):
     message: str
+    session: str = ""  # per-tab id from the browser, used only for follow-up questions
 
 
 @app.on_event("startup")
 def _bootstrap():
-    if not trainer.CHECKPOINT.exists():
-        job.start()  # first boot (e.g. fresh cloud container): ~10 s micro-training
+    if not all(trainer.checkpoint(name).exists() for name in agent.brains):
+        job.start()  # weights normally ship in models/; train only if they are missing
 
 
 @app.get("/")
@@ -52,7 +53,7 @@ def dev_page(request: Request, name: str = "dev.html"):
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "model_ready": agent.brain.ready}
+    return {"status": "ok", "model_ready": all(b.ready for b in agent.brains.values())}
 
 
 @app.post("/api/chat")
@@ -62,7 +63,7 @@ def chat(body: ChatIn, request: Request):
         raise HTTPException(400, "Empty message")
     # Real code/system execution only for the developer sitting at this machine.
     allow_exec = not SAFE_MODE and dev_api.is_local(request)
-    result = agent.handle(message, allow_exec=allow_exec)
+    result = agent.handle(message, allow_exec=allow_exec, session=body.session[:64])
     stats.record(message, result)
     return result
 

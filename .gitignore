@@ -7,6 +7,7 @@ __pycache__/
 # Model weights / runtime data
 checkpoints/
 *.pt
+!models/*.pt
 workspace/
 logs/
 

@@ -1,0 +1,62 @@
+[
+ {
+  "version": 1,
+  "brain": "router",
+  "size": "medium",
+  "params": 460170,
+  "steps": 1764,
+  "total_steps": 1764,
+  "examples": 9356,
+  "custom_examples": 1,
+  "vocab": 478,
+  "labels": 10,
+  "val_acc": 1.0,
+  "seconds": 143.71,
+  "date": "2026-10-30 03:47"
+ },
+ {
+  "version": 2,
+  "brain": "coder",
+  "size": "medium",
+  "params": 431124,
+  "steps": 1056,
+  "total_steps": 2820,
+  "examples": 5610,
+  "custom_examples": 0,
+  "vocab": 241,
+  "labels": 20,
+  "val_acc": 1.0,
+  "seconds": 89.42,
+  "date": "2026-10-30 03:48"
+ },
+ {
+  "version": 3,
+  "brain": "router",
+  "size": "medium",
+  "params": 474762,
+  "steps": 1764,
+  "total_steps": 4584,
+  "examples": 9356,
+  "custom_examples": 1,
+  "vocab": 592,
+  "labels": 10,
+  "val_acc": 1.0,
+  "seconds": 143.75,
+  "date": "2026-10-30 03:54"
+ },
+ {
+  "version": 4,
+  "brain": "coder",
+  "size": "medium",
+  "params": 431508,
+  "steps": 1056,
+  "total_steps": 5640,
+  "examples": 5610,
+  "custom_examples": 0,
+  "vocab": 244,
+  "labels": 20,
+  "val_acc": 1.0,
+  "seconds": 78.35,
+  "date": "2026-10-30 03:55"
+ }
+]

@@ -117,8 +117,11 @@ def plan_system(msg: str) -> dict:
 
 
 PLANNERS = {"python": plan_python, "file": plan_file, "web": plan_web, "system": plan_system}
+SKILLS = ("code", "weather", "currency", "datetime", "units")  # answered by dedicated skills
 
 
 def make_plan(msg: str, intent: str) -> dict:
+    if intent in SKILLS:
+        return {"tool": intent, "action": "answer", "args": {"query": msg.strip()}}
     planner = PLANNERS.get(intent)
     return planner(msg) if planner else {"tool": "chat", "action": "reply", "args": {}}

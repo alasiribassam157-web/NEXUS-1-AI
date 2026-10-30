@@ -1,4 +1,4 @@
-"""Load the trained checkpoint and predict intents."""
+"""Load a trained brain checkpoint and predict labels."""
 from pathlib import Path
 
 import torch
@@ -6,12 +6,13 @@ import torch.nn.functional as F
 
 from core.neural_net import NexusBrain
 from core.tokenizer import NexusTokenizer
-from core.trainer import CHECKPOINT
+from core.trainer import checkpoint
 
 
 class BrainInference:
-    def __init__(self, path: Path = CHECKPOINT):
-        self.path = path
+    def __init__(self, brain: str = "router"):
+        self.brain = brain
+        self.path: Path = checkpoint(brain)
         self.model = None
         self.tok = None
         self.intents: list[str] = []
@@ -30,16 +31,16 @@ class BrainInference:
         model.load_state_dict(ckpt["state_dict"])
         model.eval()
         self.model, self.intents = model, ckpt["intents"]
+        self.tok = NexusTokenizer.from_json(ckpt["tokenizer"])
         self.info = {**ckpt.get("info", {}), **ckpt["config"],
                      "params": sum(p.numel() for p in model.parameters())}
-        self.tok = NexusTokenizer.from_json(ckpt["tokenizer"])
         return True
 
     @torch.no_grad()
     def predict(self, text: str) -> tuple[str, float, dict[str, float]]:
-        """Return (intent, confidence, full probability map)."""
+        """Return (label, confidence, full probability map)."""
         if not self.ready:
-            raise RuntimeError("Model not trained yet - run core.trainer first")
+            raise RuntimeError(f"{self.brain} brain not trained yet - run core.trainer first")
         ids = torch.tensor([self.tok.encode(text)], dtype=torch.long)
         probs = F.softmax(self.model(ids), dim=-1)[0]
         best = int(probs.argmax())

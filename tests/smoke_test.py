@@ -3,8 +3,9 @@ import sys
 
 from core import trainer
 
-if not trainer.CHECKPOINT.exists():
-    trainer.train()
+for _brain in ("router", "coder"):
+    if not trainer.checkpoint(_brain).exists():
+        trainer.train(brain=_brain)
 
 from agent.orchestrator import NexusAgent  # noqa: E402  (needs the checkpoint)
 from agent.tools import SAFE_MODE, WORKSPACE  # noqa: E402
@@ -27,6 +28,16 @@ check("thanks", "شكرا لك", "chat", "العفو")
 check("not small talk", "من اخترع المصباح الكهربائي", "web", "إديسون")
 check("fact (wikidata)", "ما هي عاصمة فرنسا", "web", "باريس")
 check("percent", "what is 25% of 80", "python", "20")
+check("code python", "كيف أعكس نص في بايثون", "code", "[::-1]")
+check("code java", "how to reverse a string in java", "code", "StringBuilder")
+check("units", "convert 5 miles to km", "units", "8.0467")
+# Conversation memory: the follow-up has no subject of its own.
+_s = "smoke-session"
+agent.handle("ما هي عاصمة اليابان", session=_s)
+_follow = agent.handle("وكم عدد سكانها؟", session=_s)
+print(f"{'PASS' if 'نسمة' in _follow['answer'] else 'FAIL'}  follow-up memory")
+if "نسمة" not in _follow["answer"]:
+    failures.append(f"follow-up memory: {_follow['answer'][:120]!r}")
 check("file create", "create file _smoke.txt with content ok123", "file", "Created")
 check("file read", "read _smoke.txt", "file", "ok123")
 # Public visitors: math runs through the safe evaluator, never as code.

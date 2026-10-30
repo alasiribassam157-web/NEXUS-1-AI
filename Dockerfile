@@ -18,8 +18,8 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 COPY --chown=nexus:nexus . .
 USER nexus
 
-# Bake the trained brain into the image (~10 s micro-training)
-RUN python -m core.trainer
+# The trained brains ship in models/; train here only if they are missing
+RUN test -f models/router.pt -a -f models/coder.pt || python -m core.trainer all medium
 
 EXPOSE 7860
 CMD ["python", "app.py"]

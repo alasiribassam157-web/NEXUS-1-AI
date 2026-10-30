@@ -12,7 +12,8 @@ if errorlevel 1 (
 )
 
 echo [2/4] Checking trained brain...
-if not exist "checkpoints\nexus_brain.pt" py -m core.trainer
+if not exist "models\router.pt" py -m core.trainer all medium
+if not exist "models\coder.pt" py -m core.trainer coder medium
 
 echo Stopping any old NEXUS-1 server or tunnel still running...
 powershell -NoProfile -Command "$ids = @((Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue).OwningProcess); Get-CimInstance Win32_Process | Where-Object { ($ids -contains $_.ProcessId -and $_.CommandLine -like '*app.py*') -or $_.CommandLine -like '*NEXUS-1-AI*cloudflared*' -or $_.CommandLine -like '*deploy\tunnel.py*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"

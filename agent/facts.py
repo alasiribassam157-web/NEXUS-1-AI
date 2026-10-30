@@ -60,8 +60,8 @@ def _format(value: dict, claim: dict, http: httpx.Client, lang: str) -> tuple[st
     return str(value["value"]), ""
 
 
-def answer_fact(question: str, lang: str) -> tuple[str, str] | None:
-    """Return (answer markdown, source url) or None if the question is not a known relation."""
+def answer_fact(question: str, lang: str) -> tuple[str, str, str] | None:
+    """Return (answer markdown, source url, entity name) or None if not a known relation."""
     for prop, pattern, tpl_ar, tpl_en in RELATIONS:
         m = re.search(pattern, question, re.IGNORECASE)
         if not m:
@@ -81,7 +81,7 @@ def answer_fact(question: str, lang: str) -> tuple[str, str] | None:
                     value, detail = _format(claim["mainsnak"]["datavalue"], claim, http, lang)
                     name = _label(http, qid, lang)
                     tpl = tpl_ar if lang == "ar" else tpl_en
-                    return tpl.format(e=name, v=value, d=detail), f"https://www.wikidata.org/wiki/{qid}"
+                    return tpl.format(e=name, v=value, d=detail), f"https://www.wikidata.org/wiki/{qid}", name
         except (httpx.HTTPError, KeyError, ValueError, StopIteration, AttributeError):
             return None
         return None

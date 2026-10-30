@@ -34,7 +34,7 @@ def _has(text: str, word: str) -> bool:
 def is_small_talk(message: str) -> bool:
     low = message.lower()
     words = (w for keywords, _, _ in RULES for w in keywords)
-    return any(_has(low, w) for w in (*words, *GREETINGS)) or len(low.split()) <= 1
+    return any(_has(low, w) for w in (*words, *GREETINGS))
 
 
 def chat_reply(message: str, lang: str) -> str:

@@ -3,7 +3,8 @@ venv/
 .venv/
 __pycache__/
 checkpoints/
-*.pt
+devtools/
+.nexus_cloud.json
 workspace/
 deploy/bin/
 .nexus_token
