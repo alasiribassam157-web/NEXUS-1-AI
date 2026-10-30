@@ -57,6 +57,13 @@ def _find_units(text: str) -> list[tuple[int, str]]:
     return sorted((s, u) for s, _, u in spans)
 
 
+def is_conversion(question: str) -> bool:
+    """A number plus two different units of the same kind, e.g. «1 inch to cm»."""
+    text = question.translate(str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789"))
+    found = list(dict.fromkeys(u for _, u in _find_units(text)))
+    return bool(_NUM.search(text)) and len(found) >= 2 and UNITS[found[0]][0] == UNITS[found[1]][0]
+
+
 def _to_temp(value: float, src: str, dst: str) -> float:
     c = value if src == "c" else (value - 32) * 5 / 9 if src == "f" else value - 273.15
     return c if dst == "c" else c * 9 / 5 + 32 if dst == "f" else c + 273.15

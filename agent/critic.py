@@ -3,6 +3,7 @@ import re
 
 from agent.chat_replies import is_small_talk
 from agent.code_kb import detect_language
+from agent import units
 from agent.live_skills import find_currencies
 from agent.tools import WORKSPACE, ToolResult, _BLOCKED
 
@@ -37,8 +38,7 @@ def keyword_intent(msg: str) -> str | None:
 _MATH = re.compile(r"```|\d\s*([+\-*/^%×÷٪]|\*\*)\s*\d|\d\s*[%٪]|(\d.*(ضرب|زائد|ناقص|قسمة|على|times|plus|minus|divided))|"
                    r"(calculate|compute|solve|احسب|حل|كم يساوي|factorial|مضروب|sqrt|جذر|square root|fibonacci|"
                    r"فيبوناتشي|prime|الاولية|average|متوسط|sum of|مجموع)", re.IGNORECASE)
-
-
+_CODE_TASK = re.compile(r"\b(?:for|while) loop\b|\btry catch\b|\bhello world\b|حلقة (?:for|while)|لوب", re.IGNORECASE)
 # Unmistakable arithmetic: "15*7", "3 ^ 4", "25% of 80".
 _STRONG_MATH = re.compile(r"\d\s*([+*/^×÷]|\*\*)\s*\d|\d\s*[%٪]\s*(of|من)\s*\d", re.IGNORECASE)
 
@@ -50,13 +50,18 @@ def review_intent(msg: str, intent: str, confidence: float) -> tuple[str, str]:
     if final == "python" and not _MATH.search(text):
         if detect_language(msg):
             return "code", note + " A programming language is named but no math — answering as a coding question."
-        return "web", note + " No math found in the question — answering via web search instead."
+        fallback = "units" if units.is_conversion(msg) else "web"  # «1 inch to cm» looks numeric but is a conversion
+        return fallback, note + f" No arithmetic in the question — answering with {fallback} instead."
     if final in ("web", "chat", "currency", "units") and _STRONG_MATH.search(text):
         return "python", note + " The question contains arithmetic — calculating instead."
     if final in ("weather", "datetime", "currency", "units") and detect_language(msg):
         return "code", note + " A programming language is named — answering as a coding question."
     if final == "code" and not detect_language(msg) and keyword_intent(msg) != "code":
         return "web", note + " No programming language or coding words — answering via web search instead."
+    if final in ("web", "chat") and _CODE_TASK.search(msg):
+        return "code", note + " A clear coding task (loop, function, class…) — answering as a coding question."
+    if final in ("web", "chat") and units.is_conversion(msg):
+        return "units", note + " A number with two compatible units — converting instead of searching."
     if final == "units" and len(set(find_currencies(msg))) >= 2:
         return "currency", note + " Two currencies are named — converting money, not units."
     if final == "chat" and not is_small_talk(msg):

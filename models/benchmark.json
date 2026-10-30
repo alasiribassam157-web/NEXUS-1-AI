@@ -1,41 +1,41 @@
 {
- "date": "2026-10-31 01:33",
- "total": 170,
- "passed": 170,
+ "date": "2026-10-31 02:32",
+ "total": 254,
+ "passed": 254,
  "accuracy": 1.0,
- "seconds": 287.1,
+ "seconds": 221.1,
  "by_intent": {
   "chat": {
+   "passed": 16,
+   "total": 16
+  },
+  "web": {
+   "passed": 85,
+   "total": 85
+  },
+  "python": {
+   "passed": 22,
+   "total": 22
+  },
+  "code": {
+   "passed": 41,
+   "total": 41
+  },
+  "weather": {
    "passed": 14,
    "total": 14
   },
-  "web": {
-   "passed": 56,
-   "total": 56
-  },
-  "python": {
-   "passed": 17,
-   "total": 17
-  },
-  "code": {
-   "passed": 32,
-   "total": 32
-  },
-  "weather": {
-   "passed": 11,
-   "total": 11
-  },
   "currency": {
-   "passed": 11,
-   "total": 11
+   "passed": 15,
+   "total": 15
   },
   "datetime": {
-   "passed": 9,
-   "total": 9
+   "passed": 11,
+   "total": 11
   },
   "units": {
-   "passed": 12,
-   "total": 12
+   "passed": 17,
+   "total": 17
   },
   "file": {
    "passed": 6,
@@ -44,6 +44,14 @@
   "system": {
    "passed": 2,
    "total": 2
+  },
+  "prayer": {
+   "passed": 12,
+   "total": 12
+  },
+  "translate": {
+   "passed": 13,
+   "total": 13
   }
  },
  "failures": []

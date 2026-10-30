@@ -118,5 +118,35 @@
   "val_acc": 1.0,
   "seconds": 252.2,
   "date": "2026-10-31 01:23"
+ },
+ {
+  "version": 9,
+  "brain": "router",
+  "size": "xlarge",
+  "params": 3589132,
+  "steps": 3828,
+  "total_steps": 19380,
+  "examples": 40806,
+  "custom_examples": 1,
+  "vocab": 1652,
+  "labels": 12,
+  "val_acc": 0.9992,
+  "seconds": 1607.58,
+  "date": "2026-10-31 02:00"
+ },
+ {
+  "version": 10,
+  "brain": "coder",
+  "size": "large",
+  "params": 1304852,
+  "steps": 2232,
+  "total_steps": 21612,
+  "examples": 11900,
+  "custom_examples": 0,
+  "vocab": 586,
+  "labels": 20,
+  "val_acc": 0.9943,
+  "seconds": 397.91,
+  "date": "2026-10-31 02:07"
  }
 ]
