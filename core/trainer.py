@@ -19,9 +19,10 @@ from core.tokenizer import NexusTokenizer
 
 MODELS = Path(__file__).resolve().parent.parent / "models"
 VERSIONS = MODELS / "versions.json"
-MAX_SECONDS = float(os.getenv("NEXUS_MAX_TRAIN_SECONDS", "240"))  # per brain; protects the laptop
+MAX_SECONDS = float(os.getenv("NEXUS_MAX_TRAIN_SECONDS", "1200"))  # per brain; protects the laptop
 CPU_THREADS = 2      # keep CPU load (and heat) low
-TARGET_PARAMS = 1_000_000  # goal agreed with the developer (2026-10-30)
+# Goals agreed with the developer: ~1M (reached 2026-10-30, NEXUS-2), then ~2.5M (NEXUS-3).
+TARGET_PARAMS = 2_500_000
 SIZES = {
     "small": dict(d_model=64, n_heads=4, n_layers=2, d_ff=128),
     "medium": dict(d_model=128, n_heads=4, n_layers=3, d_ff=256),

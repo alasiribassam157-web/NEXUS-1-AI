@@ -5,7 +5,7 @@ from collections import Counter, deque
 
 
 class UsageStats:
-    def __init__(self, keep_recent: int = 50):
+    def __init__(self, keep_recent: int = 200):
         self.started = time.time()
         self.questions = 0
         self.agent_steps = 0

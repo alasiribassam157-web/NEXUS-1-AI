@@ -12,18 +12,21 @@ ABOUT = {
 RULES = [
     (("شكرا", "شكراً", "مشكور", "يعطيك العافية", "thank", "thanks", "thx"),
      "العفو! 😊 إذا عندك سؤال ثاني أنا حاضر.", "You're welcome! 😊 Ask me anything else."),
-    (("كيف حالك", "كيفك", "شلونك", "how are you", "how's it going"),
+    (("كيف حالك", "كيفك", "شلونك", "شخبارك", "وش اخبارك", "how are you", "how's it going", "what's up"),
      "بخير الحمد لله، شكراً لسؤالك! كيف أقدر أساعدك؟", "I'm doing great, thanks! How can I help?"),
+    (("تصبح على خير", "good night"), "وأنت من أهله! 🌙", "Good night! 🌙"),
+    (("تمام", "ممتاز", "اوكي", "ok", "okay", "cool", "nice", "great job", "انت ذكي", "you're smart"),
+     "يسعدني! 😊 وش نسوي الحين؟", "Glad to hear it! 😊 What's next?"),
     (("من انت", "من أنت", "وش انت", "عرفني بنفسك", "ماذا تستطيع", "وش تقدر", "ساعدني",
       "who are you", "what can you do", "help", "about yourself"), None, None),
     (("صباح", "good morning"), "صباح النور! ☀️ كيف أقدر أساعدك؟", "Good morning! ☀️ How can I help?"),
     (("مساء", "good evening"), "مساء النور! 🌙 كيف أقدر أساعدك؟", "Good evening! 🌙 How can I help?"),
-    (("مع السلامة", "باي", "bye", "goodbye"), "مع السلامة! 👋", "Goodbye! 👋"),
+    (("مع السلامة", "باي", "bye", "goodbye", "see you"), "مع السلامة! 👋", "Goodbye! 👋"),
     (("السلام عليكم",), "وعليكم السلام ورحمة الله! كيف أقدر أساعدك؟", None),
 ]
 
 
-GREETINGS = ("مرحبا", "اهلا", "أهلا", "هلا", "هاي", "hello", "hi", "hey", "nexus")
+GREETINGS = ("مرحبا", "اهلا", "أهلا", "هلا", "هلا والله", "ياهلا", "هاي", "hello", "hi", "hey", "hey there", "nexus")
 
 
 def _has(text: str, word: str) -> bool:

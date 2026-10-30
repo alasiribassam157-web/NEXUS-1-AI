@@ -11,12 +11,13 @@ CUSTOM_WEIGHT = 8
 
 # brain name -> (labels, templates, slots, examples per label)
 BRAINS = {
-    "router": (templates_router.INTENTS, templates_router.TEMPLATES, templates_router.SLOTS, 1100),
-    "coder": (templates_code.CODE_TASKS, templates_code.TEMPLATES, templates_code.SLOTS, 330),
+    "router": (templates_router.INTENTS, templates_router.TEMPLATES, templates_router.SLOTS, 2200),
+    "coder": (templates_code.CODE_TASKS, templates_code.TEMPLATES, templates_code.SLOTS, 450),
 }
 
-_PREFIXES = ["", "", "", "please ", "can you ", "nexus ", "من فضلك ", "لو سمحت ", "ابغى ", "i want to "]
-_SUFFIXES = ["", "", "", " please", " now", " ?", "؟", " الان", " بسرعة", " لو سمحت"]
+_PREFIXES = ["", "", "", "", "please ", "can you ", "nexus ", "من فضلك ", "لو سمحت ", "ابغى ", "ابي ", "i want to ",
+             "hey ", "يا nexus ", "سؤال: ", "quick question: "]
+_SUFFIXES = ["", "", "", "", " please", " now", " ?", "؟", " الان", " بسرعة", " لو سمحت", " الله يعافيك", " thanks", "!"]
 
 
 def _fill(template: str, slots: dict, rng: random.Random) -> str:

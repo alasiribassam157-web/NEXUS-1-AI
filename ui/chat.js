@@ -32,7 +32,8 @@ const T = {
 const POPULAR = [
   ["web", "ما هي عاصمة اليابان؟", "What is the capital of Japan?"], ["code", "كيف أعكس نص في بايثون؟", "How to reverse a string in Python"],
   ["weather", "كيف الجو في الرياض؟", "Weather in Riyadh"], ["currency", "كم سعر الدولار بالريال؟", "Convert 100 USD to EUR"],
-  ["web", "من هو ابن سينا؟", "Who was Albert Einstein?"], ["python", "كم 15٪ من 200؟", "What is 15% of 200"],
+  ["web", "كم ارتفاع برج خليفة؟", "How tall is Mount Everest?"], ["python", "كم 15٪ من 200؟", "What is 15% of 200"],
+  ["web", "من مؤسس جوجل؟", "Who founded Tesla?"], ["web", "من هو ابن سينا؟", "Who was Albert Einstein?"],
   ["code", "حلقة for في جافاسكربت", "For loop in JavaScript"], ["datetime", "التاريخ الهجري اليوم", "What is the hijri date today?"],
   ["web", "اشرح لي الثقب الأسود", "Explain photosynthesis"], ["units", "حول 10 كيلومتر الى ميل", "Convert 5 miles to km"],
   ["web", "كم عدد سكان مصر؟", "Population of France"], ["code", "كيف أقرأ ملف في جافا؟", "Parse JSON in JavaScript"],

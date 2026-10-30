@@ -10,7 +10,9 @@ SLOTS = {
 
 _WRAP = ["how to {x} in {lang}", "how do i {x} in {lang}", "{lang} {x}", "{x} in {lang}", "{x} {lang} example",
          "show me how to {x} with {lang}", "كيف {x} في {lang}", "كيف {x} بلغة {lang}", "{x} بال{lang}",
-         "ابغى كود {x} {lang}", "علمني {x} في {lang}", "مثال على {x} {lang}", "{x}"]
+         "ابغى كود {x} {lang}", "علمني {x} في {lang}", "مثال على {x} {lang}", "{x}",
+         "سوي لي {x} في {lang}", "عطني كود {x} {lang}", "give me code to {x} in {lang}", "{lang} snippet: {x}",
+         "what's the syntax to {x} in {lang}", "syntax for {x} {lang}", "طريقة {x} في {lang}", "وش طريقة {x} ب{lang}"]
 
 # task -> core phrasings (English and Arabic) that get wrapped by _WRAP
 PHRASES = {
