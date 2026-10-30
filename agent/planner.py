@@ -35,6 +35,27 @@ def _after(text: str, markers: list[str]) -> str:
     return ""
 
 
+_NUM = r"(\d+(?:\.\d+)?)"
+_WORD_OPS = [  # spoken operators between two numbers -> symbols
+    (r"ضرب|مضروب في|×|x|times|multiplied by", "*"), (r"زائد|plus", "+"),
+    (r"ناقص|minus", "-"), (r"قسمة|مقسوم على|على|÷|divided by", "/"), (r"اس|أس|to the power of", "**"),
+]
+_FUNCS = {"sqrt", "pi", "e", "sin", "cos", "tan", "log", "log10", "exp", "abs", "round", "pow", "floor", "ceil"}
+
+
+def to_expression(text: str) -> str:
+    """'كم يساوي 15 ضرب 7' -> '15*7';  'what is 25% of 80' -> '(25/100*80)'."""
+    text = text.lower()
+    text = re.sub(_NUM + r"\s*[%٪]\s*(?:of|من)\s*" + _NUM, r"(\1/100*\2)", text)
+    text = re.sub(r"(?:square root of|sqrt of|الجذر التربيعي\s*(?:لـ|ل|للعدد|ل\s)?)\s*" + _NUM, r"sqrt(\1)", text)
+    for words, op in _WORD_OPS:
+        text = re.sub(_NUM + r"\s*(?:" + words + r")\s*" + _NUM, r"\1" + op + r"\2", text)
+        text = re.sub(_NUM + r"\s*(?:" + words + r")\s*" + _NUM, r"\1" + op + r"\2", text)  # chains: 1+2+3
+    tokens = re.findall(r"[a-z_][a-z_0-9]*|\d+(?:\.\d+)?|[+\-*/().%^,]", text)
+    kept = [t for t in tokens if not t[0].isalpha() or t in _FUNCS]
+    return "".join(kept).strip(",")
+
+
 def plan_python(msg: str) -> dict:
     block = _CODE_BLOCK.search(msg)
     if block:
@@ -46,11 +67,7 @@ def plan_python(msg: str) -> dict:
             groups = [g.strip().strip(",") for g in m.groups() if g]
             return {"tool": "python", "action": "run", "args": {"code": tpl.format(*groups)},
                     "safe": {"op": recipe, "args": groups}}
-    # Generic arithmetic: keep only math-ish characters / function names.
-    expr = re.sub(r"[^0-9+\-*/().%^ a-z_,]", " ", text.lower())
-    expr = " ".join(w for w in expr.split() if re.fullmatch(r"[0-9+\-*/().%^,]+|sqrt|pi|e|"
-                    r"sin|cos|tan|log|log10|exp|abs|round|pow|floor|ceil", w))
-    expr = expr.strip(" ,")
+    expr = to_expression(text)
     if not expr:
         return {"tool": "python", "action": "run", "args": {"code": "print('No computable expression found')"}}
     return {"tool": "python", "action": "run", "args": {"code": f"from math import *\nprint({expr})"},
@@ -80,11 +97,8 @@ def plan_file(msg: str) -> dict:
 
 
 def plan_web(msg: str) -> dict:
-    query = _after(msg, ["search the web for", "search for", "information about", "find information about",
-                         "who is", "tell me about", "look up", "latest news on", "research", "google",
-                         "what do you know about", "ابحث في الانترنت عن", "ابحث عن", "معلومات عن",
-                         "من هو", "ما هو", "اخبرني عن", "أخبرني عن", "اخر اخبار"])
-    return {"tool": "web", "action": "search", "args": {"query": query or msg.strip()}}
+    # The research tool cleans the question itself (facts need the full phrasing, e.g. "عاصمة فرنسا").
+    return {"tool": "web", "action": "search", "args": {"query": msg.strip()}}
 
 
 def plan_system(msg: str) -> dict:

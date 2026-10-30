@@ -1,6 +1,7 @@
 """Internal critic: validates plans before execution and results after, with self-repair."""
 import re
 
+from agent.chat_replies import is_small_talk
 from agent.tools import WORKSPACE, ToolResult, _BLOCKED
 
 CONFIDENCE_FLOOR = 0.60
@@ -22,8 +23,29 @@ def keyword_intent(msg: str) -> str | None:
     return best if scores[best] > 0 else None
 
 
+_MATH = re.compile(r"```|\d\s*([+\-*/^%×÷٪]|\*\*)\s*\d|\d\s*[%٪]|(\d.*(ضرب|زائد|ناقص|قسمة|على|times|plus|minus|divided))|"
+                   r"(calculate|compute|solve|احسب|حل|كم يساوي|factorial|مضروب|sqrt|جذر|square root|fibonacci|"
+                   r"فيبوناتشي|prime|الاولية|average|متوسط|sum of|مجموع)", re.IGNORECASE)
+
+
+# Unmistakable arithmetic: "15*7", "3 ^ 4", "25% of 80".
+_STRONG_MATH = re.compile(r"\d\s*([+*/^×÷]|\*\*)\s*\d|\d\s*[%٪]\s*(of|من)\s*\d", re.IGNORECASE)
+
+
 def review_intent(msg: str, intent: str, confidence: float) -> tuple[str, str]:
-    """Return (final_intent, note). Overrides the network only when it is unsure."""
+    """Return (final_intent, note). Overrides the network only when it is unsure or implausible."""
+    final, note = _review_confidence(msg, intent, confidence)
+    text = msg.translate(str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789"))
+    if final == "python" and not _MATH.search(text):
+        return "web", note + " No math found in the question — answering via web search instead."
+    if final in ("web", "chat") and _STRONG_MATH.search(text):
+        return "python", note + " The question contains arithmetic — calculating instead."
+    if final == "chat" and not is_small_talk(msg):
+        return "web", note + " Not small talk — answering via web search instead."
+    return final, note
+
+
+def _review_confidence(msg: str, intent: str, confidence: float) -> tuple[str, str]:
     if confidence >= CONFIDENCE_FLOOR:
         return intent, f"Neural confidence {confidence:.0%} ≥ {CONFIDENCE_FLOOR:.0%} — accepted."
     alt = keyword_intent(msg)
@@ -94,6 +116,6 @@ def review_result(plan: dict, result: ToolResult) -> tuple[bool, str]:
         return True, "Read-back verified: file content matches exactly."
     if plan["tool"] == "python" and "Traceback" in result.output:
         return False, "Runtime traceback detected."
-    if plan["tool"] == "web" and "Source:" not in result.output:
+    if plan["tool"] == "web" and "🔗 http" not in result.output:
         return False, "No verifiable source returned."
     return True, "Result validated."

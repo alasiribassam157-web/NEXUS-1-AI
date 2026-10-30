@@ -3,6 +3,7 @@ import re
 import time
 
 from agent import critic, safe_math
+from agent.chat_replies import chat_reply
 from agent.planner import make_plan
 from agent.tools import (FileManagerTool, PythonExecutorTool, SystemTaskTool, ToolResult,
                          WebResearchTool)
@@ -10,18 +11,6 @@ from core.inference import BrainInference
 
 EXEC_ONLY_LOCAL = "This needs code/system execution, which is available only on the developer's machine."
 
-CHAT_REPLIES = {
-    "en": "I'm **NEXUS-1**, an autonomous agent with a custom Transformer brain. I can:\n"
-          "• compute / run Python (`calculate 2**10`, or paste a ```python block)\n"
-          "• manage files (`create file notes.txt with content hi`, `list files`)\n"
-          "• research the web (`search for quantum computing`)\n"
-          "• run system commands (`run command `ipconfig``)",
-    "ar": "أنا **NEXUS-1**، وكيل ذكي مستقل بعقل Transformer مخصص. أستطيع:\n"
-          "• الحساب وتشغيل بايثون (`احسب 2**10`)\n"
-          "• إدارة الملفات (`انشئ ملف notes.txt`، `اعرض الملفات`)\n"
-          "• البحث في الإنترنت (`ابحث عن الذكاء الاصطناعي`)\n"
-          "• تنفيذ أوامر النظام (`نفذ الامر `dir``)",
-}
 
 
 class NexusAgent:
@@ -72,7 +61,7 @@ class NexusAgent:
 
         if intent == "chat":
             step("result", "Direct reply", "No tool needed.")
-            return {"steps": steps, "answer": CHAT_REPLIES[lang], "files": [], "intent": intent,
+            return {"steps": steps, "answer": chat_reply(message, lang), "files": [], "intent": intent,
                     "confidence": round(conf, 3), "ms": int((time.time() - t0) * 1000)}
 
         # 3. Plan the tool call and let the critic approve / repair it

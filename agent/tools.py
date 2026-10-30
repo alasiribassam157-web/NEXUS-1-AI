@@ -9,6 +9,9 @@ from pathlib import Path
 
 import httpx
 
+from agent.facts import answer_fact
+from agent.research import lookup
+
 WORKSPACE = Path(__file__).resolve().parent.parent / "workspace"
 WORKSPACE.mkdir(exist_ok=True)
 SAFE_MODE = os.getenv("NEXUS_SAFE_MODE", "0") == "1"
@@ -92,30 +95,22 @@ class FileManagerTool:
 
 class WebResearchTool:
     name = "WebResearchTool"
-    # Wikimedia rejects User-Agents without a project URL (robot policy).
-    _HEADERS = {"User-Agent": "NEXUS-1-Agent/1.0 (https://github.com/topics/nexus-1-ai) python-httpx"}
-
-    def search(self, query: str) -> ToolResult:
-        lang = "ar" if re.search(r"[؀-ۿ]", query) else "en"
+    def search(self, question: str) -> ToolResult:
+        """Direct facts from Wikidata first, then a short Wikipedia answer."""
+        lang = "ar" if re.search(r"[؀-ۿ]", question) else "en"
+        fact = answer_fact(question, lang)
+        if fact:
+            return ToolResult(True, f"{fact[0]}\n\n🔗 {fact[1]}")
         try:
-            with httpx.Client(timeout=8, headers=self._HEADERS, follow_redirects=True) as http:
-                hits = http.get(f"https://{lang}.wikipedia.org/w/api.php", params={
-                    "action": "query", "list": "search", "srsearch": query,
-                    "format": "json", "srlimit": 3}).json()["query"]["search"]
-                if not hits:
-                    return ToolResult(False, f"No results for: {query}")
-                title = hits[0]["title"]
-                summary = http.get(f"https://{lang}.wikipedia.org/api/rest_v1/page/summary/"
-                                   + title.replace(" ", "_")).json()
+            found = lookup(question, lang)
         except (httpx.HTTPError, KeyError, ValueError) as exc:
             # ValueError covers non-JSON bodies (e.g. a rate-limit page).
             return ToolResult(False, f"Web request failed: {exc}")
-        others = ", ".join(h["title"] for h in hits[1:])
-        url = summary.get("content_urls", {}).get("desktop", {}).get("page", "")
-        text = f"**{title}**\n{summary.get('extract', '')}\n\nSource: {url}"
-        if others:
-            text += f"\nRelated: {others}"
-        return ToolResult(True, _clip(text))
+        if not found:
+            return ToolResult(False, "لم أجد إجابة لهذا السؤال." if lang == "ar"
+                              else "I couldn't find an answer to that.")
+        title, text, url = found
+        return ToolResult(True, _clip(f"**{title}**\n\n{text}\n\n🔗 {url}"))
 
 
 class SystemTaskTool:

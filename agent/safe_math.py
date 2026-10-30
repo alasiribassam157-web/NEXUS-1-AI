@@ -71,6 +71,7 @@ def evaluate(op: str, args: list[str]) -> str:
         result = _eval(ast.parse(args[0].replace("^", "**"), mode="eval").body)
     else:
         result = RECIPES[op](*args)
-    if isinstance(result, float) and result.is_integer() and abs(result) < 1e15:
-        result = int(result)
+    if isinstance(result, float):
+        # Hide binary-float noise (0.1 + 0.2 -> 0.3) and show whole numbers without ".0".
+        result = int(result) if result.is_integer() and abs(result) < 1e15 else float(f"{result:.12g}")
     return str(result)

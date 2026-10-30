@@ -14,6 +14,9 @@ if errorlevel 1 (
 echo [2/4] Checking trained brain...
 if not exist "checkpoints\nexus_brain.pt" py -m core.trainer
 
+echo Stopping any old NEXUS-1 server or tunnel still running...
+powershell -NoProfile -Command "$ids = @((Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue).OwningProcess); Get-CimInstance Win32_Process | Where-Object { ($ids -contains $_.ProcessId -and $_.CommandLine -like '*app.py*') -or $_.CommandLine -like '*NEXUS-1-AI*cloudflared*' -or $_.CommandLine -like '*deploy\tunnel.py*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"
+
 echo [3/4] Starting server on http://localhost:8000 ...
 start "NEXUS-1 Server" /min py app.py
 

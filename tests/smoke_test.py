@@ -21,8 +21,12 @@ def check(name: str, message: str, intent: str, expect_in_answer: str = "", allo
         failures.append(f"{name}: intent={result.get('intent')} answer={result['answer'][:120]!r}")
 
 
-check("chat (en)", "hello there", "chat", "NEXUS-1")
-check("chat (ar)", "مرحبا كيف حالك", "chat", "NEXUS-1")
+check("chat (en)", "hello there", "chat", "How can I help")
+check("chat (ar)", "مرحبا كيف حالك", "chat", "أساعدك")
+check("thanks", "شكرا لك", "chat", "العفو")
+check("not small talk", "من اخترع المصباح الكهربائي", "web", "إديسون")
+check("fact (wikidata)", "ما هي عاصمة فرنسا", "web", "باريس")
+check("percent", "what is 25% of 80", "python", "20")
 check("file create", "create file _smoke.txt with content ok123", "file", "Created")
 check("file read", "read _smoke.txt", "file", "ok123")
 # Public visitors: math runs through the safe evaluator, never as code.
