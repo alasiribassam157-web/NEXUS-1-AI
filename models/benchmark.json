@@ -1,10 +1,10 @@
 {
- "date": "2026-10-31 03:45",
+ "date": "2026-10-31 06:24",
  "total": 280,
- "passed": 280,
- "accuracy": 1.0,
- "seconds": 238.4,
- "brain_alone": 0.9429,
+ "passed": 279,
+ "accuracy": 0.9964,
+ "seconds": 605.9,
+ "brain_alone": 0.9571,
  "by_intent": {
   "chat": {
    "passed": 16,
@@ -23,7 +23,7 @@
    "total": 41
   },
   "weather": {
-   "passed": 14,
+   "passed": 13,
    "total": 14
   },
   "currency": {
@@ -55,5 +55,12 @@
    "total": 13
   }
  },
- "failures": []
+ "failures": [
+  {
+   "q": "Cairo weather",
+   "want": "weather",
+   "got": "weather",
+   "answer": "Weather service error: timed out"
+  }
+ ]
 }

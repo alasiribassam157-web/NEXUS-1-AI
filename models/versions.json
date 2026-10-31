@@ -148,5 +148,41 @@
   "val_acc": 0.9943,
   "seconds": 397.91,
   "date": "2026-10-31 02:07"
+ },
+ {
+  "version": 11,
+  "brain": "router",
+  "size": "pretrained",
+  "params": 6790156,
+  "steps": 1914,
+  "total_steps": 23526,
+  "examples": 40813,
+  "custom_examples": 2,
+  "vocab": 8000,
+  "labels": 12,
+  "val_acc": 0.9996,
+  "seconds": 1164.48,
+  "date": "2026-10-31 06:07",
+  "tokenizer": "bpe",
+  "pretrain_steps": 12000,
+  "pretrain_masked_acc": 0.2119
+ },
+ {
+  "version": 12,
+  "brain": "coder",
+  "size": "pretrained",
+  "params": 6792212,
+  "steps": 558,
+  "total_steps": 24084,
+  "examples": 11900,
+  "custom_examples": 0,
+  "vocab": 8000,
+  "labels": 20,
+  "val_acc": 0.9943,
+  "seconds": 335.08,
+  "date": "2026-10-31 06:13",
+  "tokenizer": "bpe",
+  "pretrain_steps": 12000,
+  "pretrain_masked_acc": 0.2119
  }
 ]
