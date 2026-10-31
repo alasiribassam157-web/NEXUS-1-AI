@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 import dev_api
+from agent import home_feed
 from agent.orchestrator import NexusAgent
 from agent.stats import UsageStats
 from agent.tools import SAFE_MODE
@@ -49,6 +50,12 @@ def dev_page(request: Request, name: str = "dev.html"):
     if not dev_api.is_local(request) or not path.is_file():
         raise HTTPException(404)
     return FileResponse(path)
+
+
+@app.get("/api/home")
+def home_tiles(city: str = "الرياض", lang: str = "ar"):
+    """Live dashboard tiles for the home page (cached 10 minutes per city)."""
+    return home_feed.home(city.strip()[:40] or "الرياض", "en" if lang == "en" else "ar")
 
 
 @app.get("/api/health")

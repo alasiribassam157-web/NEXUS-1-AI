@@ -1,6 +1,8 @@
-// NEXUS user chat: clean ChatGPT-style home and conversation (uses content.js + history.js).
+// NEXUS user chat: bento home (home.js) and a focused conversation, with saved chats (history.js).
 const $ = (id) => document.getElementById(id);
-const sharedQuestion = new URLSearchParams(location.search).get("q");  // shareable links: /?q=...
+const params = new URLSearchParams(location.search);
+const sharedQuestion = params.get("q");  // shareable links: /?q=...  and  /?theme=dark
+if (["dark", "light"].includes(params.get("theme"))) store.set("nexus_theme", params.get("theme"));
 if (location.search) history.replaceState(null, "", "/");
 let lang = store.get("nexus_lang", "ar");
 let busy = false, cat = "web";
@@ -32,9 +34,9 @@ function applyLang() {
   document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
   document.querySelectorAll("[data-t]").forEach((el) => (el.textContent = t(el.dataset.t)));
   $("input").placeholder = t("placeholder");
-  $("lang-label").textContent = t("langBtn");
+  $("btn-lang").textContent = t("langBtn");
   applyTheme(document.documentElement.dataset.theme || "light");
-  renderCats(); renderSidebar(chatId);
+  renderHello(); renderCats(); renderHistory(chatId); loadHome();
 }
 function renderCats() {
   $("cats").innerHTML = Object.keys(POPULAR).map((k) =>
@@ -47,7 +49,7 @@ function renderCats() {
 function userBubble(text) { return `<div class="msg-user" dir="auto">${esc(text)}</div>`; }
 function botBubble(answer, intent) {
   const skill = t("cats")[intent] || t("skills")[intent];
-  return `<div class="msg-bot"><div class="avatar">N</div><div class="bot-body">
+  return `<div class="msg-bot"><img class="avatar" src="/ui/logo.svg" alt="" /><div class="bot-body">
     <div class="bot-meta">NEXUS${skill ? `<span class="badge">${skill}</span>` : ""}</div>
     <div class="answer" dir="auto">${md(answer)}</div>
     <div class="actions"><button class="mini" data-copy-answer>${svg("copy")}${t("copy")}</button></div></div></div>`;
@@ -63,15 +65,15 @@ function refreshSend() { $("send").disabled = busy || !$("input").value.trim(); 
 async function send(text) {
   text = (text || "").trim();
   if (!text || busy) return;
-  setMode(true); toggleSidebar(false);
+  setMode(true); toggleDrawer(false);
   busy = true;
   $("input").value = ""; autosize(); refreshSend();
   $("thread").insertAdjacentHTML("beforeend", userBubble(text));
   History.add(chatId, { role: "user", text });
-  renderSidebar(chatId);
+  renderHistory(chatId);
   const pending = document.createElement("div");
   pending.className = "msg-bot";
-  pending.innerHTML = `<div class="avatar">N</div><div class="bot-body"><div class="typing"><i></i><i></i><i></i></div></div>`;
+  pending.innerHTML = `<img class="avatar" src="/ui/logo.svg" alt="" /><div class="bot-body"><div class="typing"><i></i><i></i><i></i></div></div>`;
   $("thread").appendChild(pending); scrollDown();
   try {
     const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
@@ -92,11 +94,11 @@ function openChat(id) {
   if (!chat) return;
   chatId = id;
   $("thread").innerHTML = chat.messages.map((m) => (m.role === "user" ? userBubble(m.text) : botBubble(m.text, m.intent))).join("");
-  setMode(true); toggleSidebar(false); renderSidebar(chatId); scrollDown();
+  setMode(true); toggleDrawer(false); renderHistory(chatId); scrollDown();
 }
 function newChat() {
   chatId = newId(); $("thread").innerHTML = "";
-  setMode(false); toggleSidebar(false); renderSidebar(chatId); $("input").focus();
+  setMode(false); toggleDrawer(false); renderHistory(chatId); $("main").scrollTop = 0; $("input").focus();
 }
 function flash(btn) {
   const old = btn.innerHTML;
@@ -107,10 +109,15 @@ function flash(btn) {
 // ---------- Events ----------
 document.addEventListener("click", (e) => {
   const el = (sel) => e.target.closest(sel);
-  if (el("[data-del]")) { History.remove(el("[data-del]").dataset.del); if (el("[data-del]").dataset.del === chatId) newChat(); renderSidebar(chatId); return; }
+  if (el("[data-del]")) {
+    const id = el("[data-del]").dataset.del;
+    History.remove(id); if (id === chatId) newChat(); return renderHistory(chatId);
+  }
   if (el("[data-chat]")) return openChat(el("[data-chat]").dataset.chat);
+  if (el("select") || el("label.city")) return;
   if (el("[data-q]")) return send(el("[data-q]").dataset.q);
   if (el("[data-cat]")) { cat = el("[data-cat]").dataset.cat; return renderCats(); }
+  if (el("[data-close]")) return toggleDrawer(false);
   if (el("[data-copy-code]")) {
     const b = el("[data-copy-code]");
     navigator.clipboard?.writeText(b.closest(".code").querySelector("pre").textContent).then(() => flash(b));
@@ -120,15 +127,19 @@ document.addEventListener("click", (e) => {
     navigator.clipboard?.writeText(b.closest(".bot-body").querySelector(".answer").innerText).then(() => flash(b));
   }
 });
+document.addEventListener("keydown", (e) => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches(".tile[data-q]")) { e.preventDefault(); send(e.target.dataset.q); }
+});
 $("input").addEventListener("input", () => { autosize(); refreshSend(); });
 $("input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(e.target.value); } });
 $("composer").onsubmit = (e) => { e.preventDefault(); send($("input").value); };
+$("city").onchange = () => { store.set("nexus_city", $("city").value); loadHome(); };
 document.querySelectorAll("[data-new]").forEach((b) => (b.onclick = newChat));
 $("btn-theme").onclick = () => applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
 $("btn-lang").onclick = () => { lang = lang === "ar" ? "en" : "ar"; store.set("nexus_lang", lang); applyLang(); };
-$("btn-menu").onclick = () => toggleSidebar(!document.body.classList.contains("side-open"));
-$("scrim").onclick = () => toggleSidebar(false);
+$("btn-history").onclick = () => toggleDrawer(!document.body.classList.contains("drawer-open"));
+$("scrim").onclick = () => toggleDrawer(false);
 
 document.documentElement.dataset.theme = store.get("nexus_theme", "light");
-applyLang(); setMode(false); refreshSend(); $("input").focus();
+applyLang(); setMode(false); refreshSend();
 if (sharedQuestion) send(sharedQuestion);

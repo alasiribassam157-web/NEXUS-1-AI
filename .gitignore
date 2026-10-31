@@ -30,3 +30,4 @@ deploy/bin/
 node_modules/
 .vscode/
 .idea/
+data/corpus/

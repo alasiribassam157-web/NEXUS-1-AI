@@ -1,4 +1,4 @@
-// NEXUS user page: texts, icons and popular questions (loaded before history.js and chat.js).
+// NEXUS user page: texts, icons, cities and popular questions (loaded first).
 const ICONS = {
   web: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
   code: '<path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/>',
@@ -16,23 +16,32 @@ const ICONS = {
 const svg = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ""}</svg>`;
 
 const T = {
-  ar: { hello: "مرحباً، وش تبي تعرف اليوم؟", sub: "اسأل عن معلومة، كود، طقس، عملة، أو مواقيت الصلاة.",
-        newChat: "محادثة جديدة", today: "اليوم", earlier: "سابقاً", empty: "ما فيه محادثات للحين",
-        placeholder: "اسأل NEXUS…", hint: "NEXUS قد يخطئ أحياناً، تحقّق من المعلومات المهمة.",
-        error: "تعذّر الوصول للخادم، حاول مرة ثانية.", copy: "نسخ", copied: "تم النسخ", source: "المصدر",
-        dark: "الوضع الليلي", light: "الوضع النهاري", langBtn: "English",
+  ar: { morning: "صباح الخير", evening: "مساء الخير", ask: "وش تبي تعرف؟", city: "مدينتك",
+        weatherNow: "الطقس الآن", nextPrayer: "الصلاة القادمة", dollar: "الدولار اليوم", sar: "ريال سعودي",
+        codeDay: "مثال برمجي اليوم", after: "بعد", hours: "س", minutes: "د", unavailable: "غير متاح الآن",
+        popular: "أسئلة مشهورة", history: "المحادثات", newChat: "محادثة جديدة", today: "اليوم", earlier: "سابقاً",
+        empty: "ما فيه محادثات للحين", placeholder: "اسأل NEXUS عن أي شيء…",
+        hint: "NEXUS قد يخطئ أحياناً، تحقّق من المعلومات المهمة.", error: "تعذّر الوصول للخادم، حاول مرة ثانية.",
+        copy: "نسخ", copied: "تم النسخ", source: "المصدر", dark: "الوضع الليلي", light: "الوضع النهاري", langBtn: "EN",
         cats: { web: "معرفة", code: "برمجة", weather: "طقس", currency: "عملات", python: "حساب", datetime: "الوقت",
                 units: "تحويل", prayer: "الصلاة", translate: "ترجمة" },
         skills: { chat: "محادثة", file: "ملفات", system: "نظام" } },
-  en: { hello: "Hi, what would you like to know?", sub: "Ask about facts, code, weather, currency, or prayer times.",
-        newChat: "New chat", today: "Today", earlier: "Earlier", empty: "No conversations yet",
-        placeholder: "Message NEXUS…", hint: "NEXUS can make mistakes. Verify important information.",
-        error: "Couldn't reach the server, please try again.", copy: "Copy", copied: "Copied", source: "Source",
-        dark: "Dark mode", light: "Light mode", langBtn: "العربية",
+  en: { morning: "Good morning", evening: "Good evening", ask: "What's on your mind?", city: "Your city",
+        weatherNow: "Weather now", nextPrayer: "Next prayer", dollar: "US dollar today", sar: "Saudi riyal",
+        codeDay: "Code of the day", after: "in", hours: "h", minutes: "m", unavailable: "Unavailable right now",
+        popular: "Popular questions", history: "Conversations", newChat: "New chat", today: "Today", earlier: "Earlier",
+        empty: "No conversations yet", placeholder: "Ask NEXUS anything…",
+        hint: "NEXUS can make mistakes. Verify important information.", error: "Couldn't reach the server, please try again.",
+        copy: "Copy", copied: "Copied", source: "Source", dark: "Dark mode", light: "Light mode", langBtn: "ع",
         cats: { web: "Knowledge", code: "Code", weather: "Weather", currency: "Currency", python: "Math", datetime: "Time",
                 units: "Units", prayer: "Prayer", translate: "Translate" },
         skills: { chat: "Chat", file: "Files", system: "System" } },
 };
+
+// [Arabic, English] names used for the dashboard city picker (sent to the geocoder as-is)
+const CITIES = [["الرياض", "Riyadh"], ["جدة", "Jeddah"], ["مكة المكرمة", "Mecca"], ["المدينة المنورة", "Medina"],
+  ["الدمام", "Dammam"], ["أبها", "Abha"], ["تبوك", "Tabuk"], ["دبي", "Dubai"], ["الكويت", "Kuwait City"],
+  ["الدوحة", "Doha"], ["المنامة", "Manama"], ["مسقط", "Muscat"], ["القاهرة", "Cairo"], ["عمّان", "Amman"], ["لندن", "London"]];
 
 // category -> [Arabic question, English question] pairs shown under the composer
 const POPULAR = {

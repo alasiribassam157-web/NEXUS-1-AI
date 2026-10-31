@@ -11,3 +11,4 @@ workspace/
 deploy/bin/
 .nexus_token
 PERMANENT_LINK.txt
+data/corpus/

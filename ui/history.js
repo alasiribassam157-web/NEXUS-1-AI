@@ -1,4 +1,4 @@
-// Sidebar: conversations saved in this browser only (localStorage), plus theme and language controls.
+// Conversation drawer: chats saved in this browser only (localStorage), plus theme control.
 const store = {
   get: (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } },
   set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
@@ -27,7 +27,7 @@ const History = {
   remove(id) { this.save(this.all().filter((c) => c.id !== id)); },
 };
 
-function renderSidebar(activeId) {
+function renderHistory(activeId) {
   const chats = History.all();
   const startOfDay = new Date().setHours(0, 0, 0, 0);
   const row = (c) => `<div class="hist-row ${c.id === activeId ? "on" : ""}" data-chat="${c.id}">
@@ -42,7 +42,7 @@ function renderSidebar(activeId) {
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   store.set("nexus_theme", theme);
-  $("theme-label").textContent = theme === "dark" ? t("light") : t("dark");
+  $("btn-theme").title = theme === "dark" ? t("light") : t("dark");
 }
 
-function toggleSidebar(open) { document.body.classList.toggle("side-open", open); }
+function toggleDrawer(open) { document.body.classList.toggle("drawer-open", open); }

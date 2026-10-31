@@ -71,28 +71,34 @@ def answer_fact(question: str, lang: str) -> tuple[str, str, str] | None:
         if not m:
             continue
         entity = _clean_entity(next(g for g in m.groups() if g))
-        try:
-            with httpx.Client(timeout=8, headers=HEADERS) as http:
-                hits = http.get(API, params={"action": "wbsearchentities", "search": entity, "language": lang,
-                                             "uselang": lang, "type": "item", "limit": 3, "format": "json"}).json()
-                for hit in hits.get("search", []):
-                    qid = hit["id"]
-                    claims = http.get(API, params={"action": "wbgetentities", "ids": qid, "props": "claims",
-                                                   "format": "json"}).json()["entities"][qid]["claims"]
-                    found = next((p for p in prop.split("|") if _best_claim(claims.get(p, []))), None)
-                    claim = _best_claim(claims.get(found, [])) if found else None
-                    if not claim or "datavalue" not in claim["mainsnak"]:
-                        continue
-                    value, detail = _format(claim["mainsnak"]["datavalue"], claim, http, lang)
-                    if found in MULTI_VALUED:
-                        values = [c for c in claims[found] if c.get("rank") != "deprecated"
-                                  and "datavalue" in c["mainsnak"]][:3]
-                        value = ("، " if lang == "ar" else ", ").join(
-                            _format(c["mainsnak"]["datavalue"], c, http, lang)[0] for c in values)
-                    name = _label(http, qid, lang)
-                    tpl = tpl_ar if lang == "ar" else tpl_en
-                    return tpl.format(e=name, v=value, d=detail), f"https://www.wikidata.org/wiki/{qid}", name
-        except (httpx.HTTPError, KeyError, ValueError, StopIteration, AttributeError):
-            return None
+        for _attempt in range(2):  # one retry: Wikidata sometimes answers slowly
+            try:
+                return _lookup(prop, entity, tpl_ar if lang == "ar" else tpl_en, lang)
+            except httpx.TimeoutException:
+                continue
+            except (httpx.HTTPError, KeyError, ValueError, StopIteration, AttributeError):
+                return None
         return None
+    return None
+
+
+def _lookup(prop: str, entity: str, tpl: str, lang: str) -> tuple[str, str, str] | None:
+    with httpx.Client(timeout=10, headers=HEADERS) as http:
+        hits = http.get(API, params={"action": "wbsearchentities", "search": entity, "language": lang,
+                                     "uselang": lang, "type": "item", "limit": 3, "format": "json"}).json()
+        for hit in hits.get("search", []):
+            qid = hit["id"]
+            claims = http.get(API, params={"action": "wbgetentities", "ids": qid, "props": "claims",
+                                           "format": "json"}).json()["entities"][qid]["claims"]
+            found = next((p for p in prop.split("|") if _best_claim(claims.get(p, []))), None)
+            claim = _best_claim(claims.get(found, [])) if found else None
+            if not claim or "datavalue" not in claim["mainsnak"]:
+                continue
+            value, detail = _format(claim["mainsnak"]["datavalue"], claim, http, lang)
+            if found in MULTI_VALUED:
+                values = [c for c in claims[found] if c.get("rank") != "deprecated" and "datavalue" in c["mainsnak"]][:3]
+                value = ("، " if lang == "ar" else ", ").join(
+                    _format(c["mainsnak"]["datavalue"], c, http, lang)[0] for c in values)
+            name = _label(http, qid, lang)
+            return tpl.format(e=name, v=value, d=detail), f"https://www.wikidata.org/wiki/{qid}", name
     return None
