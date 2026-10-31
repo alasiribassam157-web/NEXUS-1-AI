@@ -85,13 +85,38 @@ class NexusBrain(nn.Module):
         self.ln_final = nn.LayerNorm(d_model)
         self.head = nn.Linear(d_model, n_classes)
 
-    def forward(self, ids: torch.Tensor) -> torch.Tensor:
+    def encode(self, ids: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Contextual vector for every token (used by pre-training) plus the padding mask."""
         pad_mask = ids.eq(self.pad_id)
         x = self.pos(self.embed(ids) * math.sqrt(self.embed.embedding_dim))
         for block in self.blocks:
             x = block(x, pad_mask)
-        x = self.ln_final(x)
+        return self.ln_final(x), pad_mask
+
+    def forward(self, ids: torch.Tensor) -> torch.Tensor:
+        x, pad_mask = self.encode(ids)
         # Masked mean pooling over real tokens.
         keep = (~pad_mask).unsqueeze(-1).float()
         pooled = (x * keep).sum(1) / keep.sum(1).clamp(min=1.0)
         return self.head(pooled)
+
+
+class NexusMLM(nn.Module):
+    """Self-supervised pre-training: predict hidden (masked) pieces from their context, like BERT.
+
+    The encoder is a NexusBrain, so its weights transfer directly into the router/coder brains.
+    The output layer reuses the input embedding matrix (weight tying), which saves parameters.
+    """
+
+    def __init__(self, **config):
+        super().__init__()
+        self.brain = NexusBrain(n_classes=1, **config)
+        d = config.get("d_model", 64)
+        self.transform = nn.Sequential(nn.Linear(d, d), nn.GELU(), nn.LayerNorm(d))
+        self.bias = nn.Parameter(torch.zeros(config["vocab_size"]))
+        # Embeddings are N(0, 1); without this 1/sqrt(d) the tied logits start ~16x too large (loss ≈ 45, not ≈ 9).
+        self.scale = d ** -0.5
+
+    def forward(self, ids: torch.Tensor) -> torch.Tensor:
+        x, _ = self.brain.encode(ids)
+        return (self.transform(x) @ self.brain.embed.weight.T) * self.scale + self.bias

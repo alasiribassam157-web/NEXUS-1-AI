@@ -1,0 +1,108 @@
+{
+ "date": "2026-10-31 03:21",
+ "total": 91,
+ "correct": 77,
+ "accuracy": 0.8462,
+ "brain": "xlarge",
+ "params": 3589132,
+ "by_intent": {
+  "chat": "6/8",
+  "python": "7/8",
+  "file": "8/8",
+  "web": "5/8",
+  "system": "3/4",
+  "code": "7/8",
+  "weather": "8/8",
+  "currency": "5/8",
+  "datetime": "6/7",
+  "units": "7/8",
+  "prayer": "7/8",
+  "translate": "8/8"
+ },
+ "misses": [
+  {
+   "q": "hey buddy how's your day",
+   "want": "chat",
+   "got": "datetime",
+   "confidence": 0.96
+  },
+  {
+   "q": "مين صممك",
+   "want": "chat",
+   "got": "web",
+   "confidence": 0.96
+  },
+  {
+   "q": "لو ضربت 23 في 19 كم يطلع",
+   "want": "python",
+   "got": "units",
+   "confidence": 0.52
+  },
+  {
+   "q": "وش قصة سور الصين",
+   "want": "web",
+   "got": "datetime",
+   "confidence": 0.61
+  },
+  {
+   "q": "who discovered penicillin",
+   "want": "web",
+   "got": "chat",
+   "confidence": 0.69
+  },
+  {
+   "q": "what's the tallest building in the world",
+   "want": "web",
+   "got": "weather",
+   "confidence": 0.75
+  },
+  {
+   "q": "ابي اعرف اسم جهازي",
+   "want": "system",
+   "got": "file",
+   "confidence": 0.45
+  },
+  {
+   "q": "ابغى دالة بالجافا تجمع رقمين",
+   "want": "code",
+   "got": "web",
+   "confidence": 0.94
+  },
+  {
+   "q": "how many euros for 500 dollars",
+   "want": "currency",
+   "got": "units",
+   "confidence": 0.83
+  },
+  {
+   "q": "حول لي 2000 ين",
+   "want": "currency",
+   "got": "units",
+   "confidence": 0.86
+  },
+  {
+   "q": "قيمة الدرهم مقابل الدولار",
+   "want": "currency",
+   "got": "web",
+   "confidence": 0.73
+  },
+  {
+   "q": "اي يوم احنا اليوم",
+   "want": "datetime",
+   "got": "web",
+   "confidence": 0.96
+  },
+  {
+   "q": "2 تيرا كم جيجا",
+   "want": "units",
+   "got": "python",
+   "confidence": 0.96
+  },
+  {
+   "q": "كم الساعة اذان العصر",
+   "want": "prayer",
+   "got": "datetime",
+   "confidence": 0.95
+  }
+ ]
+}

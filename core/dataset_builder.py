@@ -9,6 +9,9 @@ INTENTS = templates_router.INTENTS
 CUSTOM_FILE = Path(__file__).resolve().parent.parent / "data" / "custom_examples.jsonl"
 CUSTOM_WEIGHT = 8
 TYPO_RATE = 0.12  # share of examples that get one realistic spelling mistake
+# Self-training from real usage (questions archived on the laptop by the developer dashboard)
+ARCHIVE = CUSTOM_FILE.with_name("cloud_questions.jsonl")
+AUTO_WEIGHT, CRITIC_WEIGHT = 2, 4
 
 # brain name -> (labels, templates, slots, examples per label)
 BRAINS = {
@@ -70,6 +73,28 @@ def add_custom(text: str, label: str, brain: str = "router") -> int:
     return len(load_custom(brain))
 
 
+def load_auto_labels() -> list[tuple[str, str, int]]:
+    """(text, intent, weight) learned without a human: confident verified answers, and — weighted higher —
+    the cases where the critic corrected the brain. Held-out test questions are never used."""
+    if not ARCHIVE.exists():
+        return []
+    try:
+        from tests.heldout import HELDOUT
+        exclude = {q for qs in HELDOUT.values() for q in qs}
+    except ImportError:
+        exclude = set()
+    out = []
+    for line in ARCHIVE.read_text(encoding="utf-8").splitlines():
+        r = json.loads(line) if line.strip() else {}
+        if not r.get("ok") or r.get("intent") not in INTENTS or not r.get("neural") or r.get("text") in exclude:
+            continue
+        if r["neural"] != r["intent"]:
+            out.append((r["text"], r["intent"], CRITIC_WEIGHT))
+        elif (r.get("confidence") or 0) >= 0.9:
+            out.append((r["text"], r["intent"], AUTO_WEIGHT))
+    return out
+
+
 def build_dataset(brain: str = "router", seed: int = 7) -> tuple[list[tuple[str, int]], int]:
     """Return (shuffled (text, label) pairs, number of taught examples)."""
     labels, templates, slots, per_label = BRAINS[brain]
@@ -85,6 +110,9 @@ def build_dataset(brain: str = "router", seed: int = 7) -> tuple[list[tuple[str,
     for row in custom:
         # Oversample taught examples so a handful of corrections actually move the model.
         data += [(row["text"], labels.index(row["intent"]))] * CUSTOM_WEIGHT
+    if brain == "router":
+        for text, intent, weight in load_auto_labels():
+            data += [(text, labels.index(intent))] * weight
     rng.shuffle(data)
     return data, len(custom)
 

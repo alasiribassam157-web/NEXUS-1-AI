@@ -1,52 +1,27 @@
 """Internal critic: validates plans before execution and results after, with self-repair."""
 import re
 
+from agent import composer, date_math, math_engine, units
 from agent.chat_replies import is_small_talk
 from agent.code_kb import detect_language
-from agent import units
+from agent.critic_rules import CONFIDENCE_FLOOR, _CODE_TASK, _MATH, _STRONG_MATH, keyword_intent
 from agent.live_skills import find_currencies
 from agent.tools import WORKSPACE, ToolResult, _BLOCKED
-
-CONFIDENCE_FLOOR = 0.60
-
-# Independent keyword router used to cross-check low-confidence neural predictions.
-_KEYWORDS = {
-    "python": ["calculate", "compute", "احسب", "```", "كم يساوي"],
-    "file": ["file", "folder", "directory", ".txt", ".md", ".csv", ".json", "ملف", "مجلد", "الملفات"],
-    "web": ["search", "who is", "tell me about", "news", "ابحث", "معلومات عن", "من هو", "اخبار"],
-    "system": ["command", "terminal", "ipconfig", "tasklist", "systeminfo", "الامر", "الأمر", "النظام"],
-    "chat": ["hello", "hi", "thanks", "who are you", "مرحبا", "شكرا", "من انت", "كيف حالك"],
-    "code": ["code", "كود", "function", "دالة", "loop", "لوب", "حلقة", "class", "كلاس", "array", "مصفوفة", "string",
-             "برمجة", "sort", "رتب", "reverse", "اعكس", "json", "http", "api", "dictionary", "قاموس", "variable",
-             "متغير", "exception", "try catch", "hello world", "list", "قائمة", "فنكشن", "random", "عشوائي"],
-    "weather": ["weather", "temperature", "الطقس", "طقس", "الجو", "درجة الحرارة", "مطر", "rain"],
-    "currency": ["exchange rate", "سعر صرف", "سعر الدولار", "دولار", "ريال", "يورو", "currency", "usd", "eur"],
-    "datetime": ["what time", "الساعة", "الساعه", "التاريخ اليوم", "هجري", "الهجري", "today's date", "hijri"],
-    "prayer": ["الصلاة", "صلاة", "اذان", "أذان", "prayer", "fajr", "maghrib", "الفجر", "المغرب", "العشاء"],
-    "translate": ["ترجم", "translate", "بالانجليزي", "بالإنجليزي", "بالعربي", "in arabic", "in english", "معنى"],
-    "units": ["convert", "حول", "كيلومتر", "ميل", "رطل", "فهرنهايت", "mile", "km", "kg", "feet", "pounds"],
-}
-
-
-def keyword_intent(msg: str) -> str | None:
-    low = msg.lower()
-    scores = {k: sum(w in low for w in words) for k, words in _KEYWORDS.items()}
-    best = max(scores, key=scores.get)
-    return best if scores[best] > 0 else None
-
-
-_MATH = re.compile(r"```|\d\s*([+\-*/^%×÷٪]|\*\*)\s*\d|\d\s*[%٪]|(\d.*(ضرب|زائد|ناقص|قسمة|على|times|plus|minus|divided))|"
-                   r"(calculate|compute|solve|احسب|حل|كم يساوي|factorial|مضروب|sqrt|جذر|square root|fibonacci|"
-                   r"فيبوناتشي|prime|الاولية|average|متوسط|sum of|مجموع)", re.IGNORECASE)
-_CODE_TASK = re.compile(r"\b(?:for|while) loop\b|\btry catch\b|\bhello world\b|حلقة (?:for|while)|لوب", re.IGNORECASE)
-# Unmistakable arithmetic: "15*7", "3 ^ 4", "25% of 80".
-_STRONG_MATH = re.compile(r"\d\s*([+*/^×÷]|\*\*)\s*\d|\d\s*[%٪]\s*(of|من)\s*\d", re.IGNORECASE)
 
 
 def review_intent(msg: str, intent: str, confidence: float) -> tuple[str, str]:
     """Return (final_intent, note). Overrides the network only when it is unsure or implausible."""
     final, note = _review_confidence(msg, intent, confidence)
     text = msg.translate(str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789"))
+    # NEXUS-5 reasoning skills take precedence when the question clearly needs them.
+    op = math_engine.detect(msg)
+    if op and math_engine.has_math(msg) and final != "code" and (op in math_engine.STRONG_OPS or final not in ("units", "currency")):
+        return "python", note + " Symbolic math problem — solving it step by step."
+    if date_math.handles(msg) and (final in ("web", "python", "chat", "units", "datetime")
+                                   or (final == "prayer" and date_math.mentions_event(msg))):
+        return "datetime", note + " Date reasoning (days until / age / gap between dates)."
+    if composer.is_comparison(msg) and final in ("web", "chat", "python", "units"):
+        return "web", note + " A comparison — looking up both sides and comparing."
     if final == "python" and not _MATH.search(text):
         if detect_language(msg):
             return "code", note + " A programming language is named but no math — answering as a coding question."

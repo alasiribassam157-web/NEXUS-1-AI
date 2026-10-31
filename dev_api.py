@@ -14,8 +14,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from agent.tools import WORKSPACE
-from core import trainer
-from core.dataset_builder import BRAINS, INTENTS, add_custom, load_custom
+from core import finetune, trainer
+from core.dataset_builder import BRAINS, INTENTS, add_custom, load_auto_labels, load_custom
+from core.pretrain import LOG as PRETRAIN_LOG
 
 ROOT = Path(__file__).resolve().parent
 CLOUD_KEY = os.getenv("NEXUS_ACCESS_TOKEN", "").strip()
@@ -50,11 +51,15 @@ class TeachIn(BaseModel):
     brain: str = "router"
 
 
-def _benchmark() -> dict:
+def _read_json(path: Path) -> dict:
     try:
-        return json.loads((trainer.MODELS / "benchmark.json").read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
+
+
+def _benchmark() -> dict:
+    return _read_json(trainer.MODELS / "benchmark.json")
 
 
 def _archive(recent: list[dict]) -> list[dict]:
@@ -81,11 +86,18 @@ def build_router(agent, stats, job) -> APIRouter:
                 "total_params": sum(info.get("params", 0) for info in brains.values()),
                 "target_params": trainer.TARGET_PARAMS, "benchmark": _benchmark(),
                 "versions": trainer.load_versions(), "taught": sum(len(load_custom(n)) for n in BRAINS),
-                "intents": INTENTS, "sizes": list(trainer.SIZES)}
+                "intents": INTENTS, "sizes": list(trainer.SIZES) + (["pretrained"] if finetune.available() else [])}
+
+    @router.get("/learning")
+    def learning():
+        """NEXUS-5 learning metrics: pre-training progress, honest held-out score, self-training size."""
+        return {"pretrain": _read_json(PRETRAIN_LOG) or None, "heldout": _read_json(trainer.MODELS / "heldout.json") or None,
+                "brain_alone": _benchmark().get("brain_alone"), "auto_labels": len(load_auto_labels()),
+                "pretrained_ready": finetune.available()}
 
     @router.post("/train")
     def train(body: TrainIn):
-        if body.size not in trainer.SIZES or body.brain not in (*BRAINS, "all"):
+        if body.size not in (*trainer.SIZES, "pretrained") or body.brain not in (*BRAINS, "all"):
             raise HTTPException(400, f"size must be one of {list(trainer.SIZES)}; brain router|coder|all")
         return {"started": job.start(body.brain, body.size, max(1, min(body.epochs, 60)))}
 

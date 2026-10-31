@@ -32,7 +32,12 @@ def _best_claim(claims: list) -> dict | None:
     pool = preferred or [c for c in claims if c.get("rank") != "deprecated"]
     current = [c for c in pool if "P582" not in c.get("qualifiers", {})]  # skip claims that have an end date
     pool = current or pool
-    return pool[-1] if pool else None
+    if not pool:
+        return None
+    dated = [c for c in pool if "P585" in c.get("qualifiers", {})]
+    if dated:  # figures with a date (population): the most recent one
+        return max(dated, key=lambda c: c["qualifiers"]["P585"][0].get("datavalue", {}).get("value", {}).get("time", ""))
+    return pool[0]  # otherwise the main value (France's currency is the euro, not the CFP franc)
 
 
 def _quantity(value: dict, claim: dict, lang: str) -> tuple[str, str]:
@@ -79,6 +84,23 @@ def answer_fact(question: str, lang: str) -> tuple[str, str, str] | None:
             except (httpx.HTTPError, KeyError, ValueError, StopIteration, AttributeError):
                 return None
         return None
+    return None
+
+
+def numeric_fact(entity: str, prop: str, lang: str) -> tuple[str, float, str, str] | None:
+    """(name, number, unit, source url) for quantities such as population (P1082) or area (P2046)."""
+    with httpx.Client(timeout=12, headers=HEADERS) as http:
+        hits = http.get(API, params={"action": "wbsearchentities", "search": _clean_entity(entity), "language": lang,
+                                     "uselang": lang, "type": "item", "limit": 3, "format": "json"}).json()
+        for hit in hits.get("search", []):
+            claims = http.get(API, params={"action": "wbgetentities", "ids": hit["id"], "props": "claims",
+                                           "format": "json"}).json()["entities"][hit["id"]]["claims"]
+            found = next((p for p in prop.split("|") if _best_claim(claims.get(p, []))), None)
+            claim = _best_claim(claims.get(found, [])) if found else None
+            value = claim and claim["mainsnak"].get("datavalue", {}).get("value")
+            if isinstance(value, dict) and "amount" in value:
+                unit = UNITS.get(value.get("unit", "").rsplit("/", 1)[-1], ("", ""))[0 if lang == "ar" else 1]
+                return _label(http, hit["id"], lang), float(value["amount"]), unit, f"https://www.wikidata.org/wiki/{hit['id']}"
     return None
 
 

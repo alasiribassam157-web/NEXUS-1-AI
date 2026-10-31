@@ -39,11 +39,12 @@ class NexusTokenizer:
                 self.vocab[tok] = len(self.vocab)
         return self
 
-    def encode(self, text: str) -> list[int]:
+    def encode(self, text: str, max_len: int | None = None) -> list[int]:
+        limit = max_len or self.max_len
         ids = [self.vocab[CLS]]
         ids += [self.vocab.get(t, self.vocab[UNK]) for t in split_words(text)]
-        ids = ids[: self.max_len]
-        return ids + [self.pad_id] * (self.max_len - len(ids))
+        ids = ids[:limit]
+        return ids + [self.pad_id] * (limit - len(ids))
 
     def to_json(self) -> str:
         return json.dumps({"vocab": self.vocab, "max_len": self.max_len}, ensure_ascii=False)

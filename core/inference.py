@@ -1,10 +1,12 @@
 """Load a trained brain checkpoint and predict labels."""
+import json
 from pathlib import Path
 
 import torch
 import torch.nn.functional as F
 
 from core.neural_net import NexusBrain
+from core.bpe import BPETokenizer
 from core.tokenizer import NexusTokenizer
 from core.trainer import checkpoint
 
@@ -31,7 +33,8 @@ class BrainInference:
         model.load_state_dict(ckpt["state_dict"])
         model.eval()
         self.model, self.intents = model, ckpt["intents"]
-        self.tok = NexusTokenizer.from_json(ckpt["tokenizer"])
+        raw = ckpt["tokenizer"]
+        self.tok = (BPETokenizer if json.loads(raw).get("kind") == "bpe" else NexusTokenizer).from_json(raw)
         self.info = {**ckpt.get("info", {}), **ckpt["config"],
                      "params": sum(p.numel() for p in model.parameters())}
         return True

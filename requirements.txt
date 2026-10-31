@@ -3,5 +3,6 @@ uvicorn>=0.29
 httpx>=0.27
 numpy>=1.26
 tzdata>=2024.1
+sympy>=1.12
 # CPU build of torch is installed separately (see README / Dockerfile)
 torch>=2.2

@@ -1,5 +1,5 @@
 """Runs an approved plan with the right tool or skill."""
-from agent import live_skills, prayer, safe_math, translate, units
+from agent import composer, date_math, live_skills, math_engine, prayer, safe_math, translate, units
 from agent.coder import CoderSkill
 from agent.tools import FileManagerTool, PythonExecutorTool, SystemTaskTool, ToolResult, WebResearchTool
 
@@ -7,7 +7,8 @@ EXEC_ONLY_LOCAL = "This needs code/system execution, which is available only on 
 TOOL_NAMES = {"python": "PythonExecutorTool", "file": "FileManagerTool", "web": "WebResearchTool",
               "system": "SystemTaskTool", "code": "CoderSkill", "weather": "WeatherSkill",
               "currency": "CurrencySkill", "datetime": "DateTimeSkill", "units": "UnitsSkill",
-              "prayer": "PrayerTimesSkill", "translate": "TranslateSkill"}
+              "prayer": "PrayerTimesSkill", "translate": "TranslateSkill", "math": "MathEngine",
+              "compare": "CompareSkill"}
 
 
 class Dispatcher:
@@ -43,7 +44,13 @@ class Dispatcher:
         if tool == "currency":
             return live_skills.currency(args["query"])
         if tool == "datetime":
+            if date_math.handles(args["query"]):
+                return date_math.answer(args["query"])
             return live_skills.date_time(args["query"])
+        if tool == "math":
+            return math_engine.solve(args["query"])
+        if tool == "compare":
+            return composer.compare(args["query"])
         if tool == "units":
             return units.convert(args["query"])
         if tool == "prayer":

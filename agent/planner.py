@@ -1,6 +1,8 @@
 """Turns (message, intent) into a concrete tool call: {tool, action, args}."""
 import re
 
+from agent import composer, math_engine
+
 _AR_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩×÷", "0123456789*/")
 _FNAME = re.compile(r"[\w\-./\\]+\.[A-Za-z0-9]{1,6}")
 _CODE_BLOCK = re.compile(r"```(?:python|py)?\s*\n?(.*?)```", re.DOTALL)
@@ -57,6 +59,8 @@ def to_expression(text: str) -> str:
 
 
 def plan_python(msg: str) -> dict:
+    if math_engine.detect(msg) or re.search(r"=.*[xyzسص]|[xyzسص].*=", msg):
+        return {"tool": "math", "action": "solve", "args": {"query": msg.strip()}}
     block = _CODE_BLOCK.search(msg)
     if block:
         return {"tool": "python", "action": "run", "args": {"code": block.group(1).strip()}}
@@ -97,6 +101,8 @@ def plan_file(msg: str) -> dict:
 
 
 def plan_web(msg: str) -> dict:
+    if composer.is_comparison(msg):
+        return {"tool": "compare", "action": "answer", "args": {"query": msg.strip()}}
     # The research tool cleans the question itself (facts need the full phrasing, e.g. "عاصمة فرنسا").
     return {"tool": "web", "action": "search", "args": {"query": msg.strip()}}
 

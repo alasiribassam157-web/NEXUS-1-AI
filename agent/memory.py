@@ -14,6 +14,8 @@ _FOLLOW_UPS = [
     (r"\bits capital\b", "capital of {e}"), (r"\bits population\b|how many people live there", "population of {e}"),
     (r"\bits currency\b", "currency of {e}"), (r"\bwhen was it founded\b", "when was {e} founded"),
     (r"\bweather there\b", "weather in {e}"),
+    (r"\bwhen was (?:he|she|it) born\b", "when was {e} born"), (r"\bwhere was (?:he|she) born\b", "where was {e} born"),
+    (r"^و?\s*متى (?:ولد|ولدت|انولد)\s*$", "متى ولد {e}"), (r"^و?\s*(?:اين|أين|وين) (?:ولد|ولدت)\s*$", "أين ولد {e}"),
     (r"^(?:و\s*)?(?:المزيد|اكثر|أكثر|تكلم اكثر|زدني)\s*$", "معلومات عن {e}"),
     (r"^(?:tell me )?more\s*$", "tell me about {e}"),
 ]

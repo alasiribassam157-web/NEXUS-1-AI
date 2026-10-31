@@ -24,7 +24,7 @@ class UsageStats:
             self.intents[intent] += 1
             ok = all(s["status"] == "ok" for s in result.get("steps", []))
             self.verified += ok
-            self.recent.appendleft({"text": message[:200], "intent": intent, "ok": ok,
+            self.recent.appendleft({"text": message[:200], "intent": intent, "neural": result.get("neural_intent"), "ok": ok,
                                     "confidence": result.get("confidence"),
                                     "time": time.strftime("%H:%M:%S"), "date": time.strftime("%Y-%m-%d")})
 

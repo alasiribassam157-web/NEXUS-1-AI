@@ -2,14 +2,15 @@
 import re
 import time
 
-from agent import critic
+from agent import composer, critic
 from agent.chat_replies import chat_reply
 from agent.dispatch import TOOL_NAMES, Dispatcher
 from agent.memory import ConversationMemory
 from agent.planner import make_plan
 from core.inference import BrainInference
 
-FORMATTED_TOOLS = ("web", "code", "weather", "currency", "datetime", "units", "prayer", "translate")  # already markdown
+FORMATTED_TOOLS = ("web", "code", "weather", "currency", "datetime", "units", "prayer", "translate", "math",
+                   "compare")  # already markdown
 
 
 class NexusAgent:
@@ -23,16 +24,29 @@ class NexusAgent:
         return {"router": self.brain, "coder": self.tools.coder.brain}
 
     def handle(self, message: str, allow_exec: bool = False, session: str = "") -> dict:
+        """Answer a message; compound questions («…وكم عدد سكانها») are split and answered part by part."""
+        parts = composer.split_compound(message)
+        if len(parts) == 1:
+            return self._handle_one(message, allow_exec, session)
+        session = session or f"compound-{id(parts)}"  # follow-up parts need memory to resolve «سكانها»
+        results = [self._handle_one(part, allow_exec, session) for part in parts]
+        merged = dict(results[0])
+        merged["answer"] = "\n\n".join(r["answer"] for r in results)
+        merged["steps"] = [s for r in results for s in r["steps"]]
+        merged["ms"] = sum(r["ms"] for r in results)
+        return merged
+
+    def _handle_one(self, message: str, allow_exec: bool = False, session: str = "") -> dict:
         """allow_exec: run real Python/system commands (only for the developer's own machine)."""
         t0 = time.time()
         lang = "ar" if re.search(r"[؀-ۿ]", message) else "en"
-        steps = []
+        steps, neural = [], ""  # neural = the brain's own answer before the critic steps in
 
         def step(stage: str, title: str, detail: str = "", status: str = "ok"):
             steps.append({"stage": stage, "title": title, "detail": detail, "status": status})
 
         def done(answer: str, intent: str, conf: float, files=()) -> dict:
-            return {"steps": steps, "answer": answer, "files": list(files), "intent": intent,
+            return {"steps": steps, "answer": answer, "files": list(files), "intent": intent, "neural_intent": neural,
                     "confidence": round(conf, 3), "ms": int((time.time() - t0) * 1000)}
 
         # 0. Conversation memory: "وكم عدد سكانها؟" -> "وكم عدد سكان اليابان"
@@ -46,6 +60,7 @@ class NexusAgent:
             step("plan", "Brain not trained", "Train the router brain first.", "error")
             return done("⚠️ Model not trained yet.", "unknown", 0.0)
         intent, conf, dist = self.brain.predict(message)
+        neural = intent
         step("plan", f"Intent: {intent} ({conf:.0%})",
              " · ".join(f"{k} {v:.0%}" for k, v in sorted(dist.items(), key=lambda kv: -kv[1])[:4]))
 

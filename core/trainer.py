@@ -13,6 +13,7 @@ from typing import Callable
 import torch
 import torch.nn as nn
 
+from core import finetune
 from core.dataset_builder import BRAINS, build_dataset, train_val_split
 from core.neural_net import NexusBrain
 from core.tokenizer import NexusTokenizer
@@ -42,8 +43,8 @@ def load_versions() -> list[dict]:
         return []
 
 
-def _tensors(pairs, tok: NexusTokenizer):
-    x = torch.tensor([tok.encode(t) for t, _ in pairs], dtype=torch.long)
+def _tensors(pairs, tok):
+    x = torch.tensor([tok.encode(t, 32) for t, _ in pairs], dtype=torch.long)
     y = torch.tensor([label for _, label in pairs], dtype=torch.long)
     return x, y
 
@@ -65,12 +66,17 @@ def train(brain: str = "router", size: str = "medium", epochs: int = 12, batch_s
 
     data, n_custom = build_dataset(brain)
     train_pairs, val_pairs = train_val_split(data)
-    # min_freq=2 keeps one-off typos out of the vocabulary; the brain learns to read them as <unk>.
-    tok = NexusTokenizer(max_len=32).fit([t for t, _ in train_pairs], min_freq=2)
+    extra = {}
+    if size == "pretrained":
+        # Transfer learning: start from the encoder that learned the language from Wikipedia.
+        model, tok, extra = finetune.load_pretrained(len(labels))
+        lr = min(lr, 5e-4)
+    else:
+        # min_freq=2 keeps one-off typos out of the vocabulary; the brain learns to read them as <unk>.
+        tok = NexusTokenizer(max_len=32).fit([t for t, _ in train_pairs], min_freq=2)
+        model = NexusBrain(len(tok.vocab), len(labels), max_len=tok.max_len, pad_id=tok.pad_id, **SIZES[size])
     x_tr, y_tr = _tensors(train_pairs, tok)
     x_va, y_va = _tensors(val_pairs, tok)
-
-    model = NexusBrain(len(tok.vocab), len(labels), max_len=tok.max_len, pad_id=tok.pad_id, **SIZES[size])
     steps_per_epoch = (len(x_tr) + batch_size - 1) // batch_size
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=lr, total_steps=epochs * steps_per_epoch)
@@ -111,9 +117,11 @@ def train(brain: str = "router", size: str = "medium", epochs: int = 12, batch_s
             "total_steps": steps + sum(v["steps"] for v in versions), "examples": len(train_pairs),
             "custom_examples": n_custom, "vocab": len(tok.vocab), "labels": len(labels),
             "val_acc": history[-1]["val_acc"], "seconds": round(time.time() - start, 2),
-            "date": time.strftime("%Y-%m-%d %H:%M")}
+            "date": time.strftime("%Y-%m-%d %H:%M"), "tokenizer": getattr(tok, "kind", "word"), **extra}
     MODELS.mkdir(parents=True, exist_ok=True)
-    torch.save({"state_dict": model.state_dict(), "config": model.config, "tokenizer": tok.to_json(),
+    # fp16 halves the file size on GitHub; inference converts back to fp32.
+    weights = {k: v.half() if v.is_floating_point() else v for k, v in model.state_dict().items()}
+    torch.save({"state_dict": weights, "config": model.config, "tokenizer": tok.to_json(),
                 "intents": labels, "history": history, "info": info}, checkpoint(brain))
     VERSIONS.write_text(json.dumps(versions + [info], indent=1), encoding="utf-8")
     return {"history": history, "checkpoint": str(checkpoint(brain)), **info}

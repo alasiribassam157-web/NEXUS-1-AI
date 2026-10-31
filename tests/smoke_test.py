@@ -31,6 +31,10 @@ check("percent", "what is 25% of 80", "python", "20")
 check("code python", "كيف أعكس نص في بايثون", "code", "[::-1]")
 check("code java", "how to reverse a string in java", "code", "StringBuilder")
 check("units", "convert 5 miles to km", "units", "8.0467")
+check("equation", "حل المعادلة 2x+5=17", "python", "x = 6")
+check("derivative", "derivative of x^3", "python", "3·x^2")
+check("not a variable", "تحليل الطقس في جدة", "weather", "°")
+check("age", "كم عمري لو انولدت 12-05-1998", "datetime", "سنة")
 # Conversation memory: the follow-up has no subject of its own.
 _s = "smoke-session"
 agent.handle("ما هي عاصمة اليابان", session=_s)
