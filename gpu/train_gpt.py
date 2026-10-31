@@ -43,11 +43,12 @@ def main() -> None:
     ap.add_argument("--out", default="/kaggle/working/nexus_gpt" if Path("/kaggle").exists() else "checkpoints/gpt")
     ap.add_argument("--hours", type=float, default=11.5)
     ap.add_argument("--steps", type=int, default=200_000)
-    ap.add_argument("--batch", type=int, default=16)
-    ap.add_argument("--accum", type=int, default=8)          # 16 × 8 × 512 ≈ 65k tokens per step
+    ap.add_argument("--batch", type=int, default=8)
+    ap.add_argument("--accum", type=int, default=16)          # 8 × 16 × 512 ≈ 65k tokens per step
     ap.add_argument("--context", type=int, default=512)
     ap.add_argument("--lr", type=float, default=6e-4)
     ap.add_argument("--local", action="store_true")
+    ap.add_argument("--no-checkpoint", action="store_true", help="disable gradient checkpointing (uses more VRAM)")
     args = ap.parse_args()
 
     out = Path(args.out)
@@ -59,7 +60,11 @@ def main() -> None:
                 shutil.copy(resume.parent / name, out / name)
     info = build(out, local=args.local)
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = NexusGPT(info["vocab"], context=args.context, **SIZES[args.size]).to(device)
+    # recomputes activations during backward instead of storing them — trades ~30% more compute
+    # for much less VRAM, which is what lets "large" (350M) fit on a 16GB T4
+    grad_checkpoint = device == "cuda" and not args.no_checkpoint
+    model = NexusGPT(info["vocab"], context=args.context, grad_checkpoint=grad_checkpoint,
+                     **SIZES[args.size]).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.1)
     step = 0
     if resume:

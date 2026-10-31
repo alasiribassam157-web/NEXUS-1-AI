@@ -8,6 +8,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint
 
 SIZES = {
     "tiny": dict(d_model=128, n_layers=2, n_heads=4),        # CPU smoke test only
@@ -40,11 +41,12 @@ class Block(nn.Module):
 
 class NexusGPT(nn.Module):
     def __init__(self, vocab_size: int, d_model: int, n_layers: int, n_heads: int,
-                 context: int = 512, dropout: float = 0.0):
+                 context: int = 512, dropout: float = 0.0, grad_checkpoint: bool = False):
         super().__init__()
         self.config = dict(vocab_size=vocab_size, d_model=d_model, n_layers=n_layers, n_heads=n_heads,
                            context=context, dropout=dropout)
         self.context = context
+        self.grad_checkpoint = grad_checkpoint  # recompute activations during backward instead of storing them
         self.tok = nn.Embedding(vocab_size, d_model)
         self.pos = nn.Embedding(context, d_model)
         self.blocks = nn.ModuleList(Block(d_model, n_heads, dropout) for _ in range(n_layers))
@@ -68,7 +70,8 @@ class NexusGPT(nn.Module):
         t = idx.size(1)
         x = self.tok(idx) + self.pos(torch.arange(t, device=idx.device))
         for block in self.blocks:
-            x = block(x)
+            # trades ~30% more compute for much less GPU memory — needed to fit "large" on a 16GB card
+            x = checkpoint(block, x, use_reentrant=False) if self.grad_checkpoint and self.training else block(x)
         logits = self.head(self.ln(x))
         if targets is None:
             return logits, None
