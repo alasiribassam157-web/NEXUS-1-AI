@@ -2,6 +2,8 @@
 import re
 from importlib import import_module
 
+from agent.code_kb.tasks_plus import TASKS_PLUS
+
 # task key -> (Arabic title, English title); order defines the coder brain's labels
 TASKS = {
     "hello_world": ("طباعة Hello World", "Print Hello World"),
@@ -24,6 +26,7 @@ TASKS = {
     "current_date": ("التاريخ والوقت الحالي", "Current date and time"),
     "split_string": ("تقسيم ودمج النصوص", "Split and join strings"),
     "sum_max": ("المجموع والأكبر في قائمة", "Sum and max of a list"),
+    **TASKS_PLUS,
 }
 
 # language key -> (display name, fence tag, detection regex)
@@ -45,19 +48,32 @@ def detect_language(text: str) -> str | None:
     return None
 
 
-def snippet(task: str, lang: str) -> str:
-    module = import_module(f"agent.code_kb.{lang}_kb")
-    return module.SNIPPETS[task]
+def snippet(task: str, lang: str) -> str | None:
+    for part in ("", "2", "3"):  # NEXUS-6 tasks live in <lang>_kb2 / <lang>_kb3 (Python and Java)
+        try:
+            module = import_module(f"agent.code_kb.{lang}_kb{part}")
+        except ModuleNotFoundError:
+            continue
+        if task in module.SNIPPETS:
+            return module.SNIPPETS[task]
+    return None
 
 
 def render(task: str, lang: str, ui_lang: str, confidence: float) -> str:
     title_ar, title_en = TASKS[task]
+    asked = LANGS[lang][0]
+    code = snippet(task, lang)
+    if code is None:  # the task exists only in Python / Java for now
+        lang, code = "python", snippet(task, "python")
     name, fence, _ = LANGS[lang]
-    others = ", ".join(n for k, (n, _, _) in LANGS.items() if k != lang)
+    others = ", ".join(n for k, (n, _, _) in LANGS.items() if k != lang and snippet(task, k))
+    missing = asked != name
     if ui_lang == "ar":
         head = f"**{title_ar}** بلغة **{name}**:"
-        tail = f"\n\n💡 متوفر أيضاً بـ: {others}. اكتب مثلاً «{title_ar} في Java»."
+        head += f"\n\n(هذه المهمة متوفرة حالياً بـ Python وJava فقط، وهذا المثال بـ Python بدل {asked}.)" if missing else ""
+        tail = f"\n\n💡 متوفر أيضاً بـ: {others}. اكتب مثلاً «{title_ar} في Java»." if others else ""
     else:
         head = f"**{title_en}** in **{name}**:"
-        tail = f"\n\n💡 Also available in: {others}. Try «{title_en.lower()} in Java»."
-    return f"{head}\n\n```{fence}\n{snippet(task, lang).strip()}\n```{tail}"
+        head += f"\n\n(This task is available in Python and Java for now; showing Python instead of {asked}.)" if missing else ""
+        tail = f"\n\n💡 Also available in: {others}. Try «{title_en.lower()} in Java»." if others else ""
+    return f"{head}\n\n```{fence}\n{code.strip()}\n```{tail}"

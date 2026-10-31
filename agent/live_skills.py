@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
+from agent.currencies import CURRENCIES
 from agent.tools import ToolResult
 
 TZ = ZoneInfo(os.getenv("NEXUS_TZ", "Asia/Riyadh"))
@@ -60,29 +61,11 @@ def weather(question: str) -> ToolResult:
     return ToolResult(True, f"{text}\n\n🔗 https://open-meteo.com", entity=p["name"])
 
 
-# code -> (Arabic name, English name, aliases)
-CURRENCIES = {
-    "USD": ("دولار أمريكي", "US dollar", ["دولار", "دولارات", "dollar", "dollars", "usd", "$"]),
-    "SAR": ("ريال سعودي", "Saudi riyal", ["ريال سعودي", "ريال", "ريالات", "riyal", "riyals", "sar"]),
-    "EUR": ("يورو", "euro", ["يورو", "euro", "euros", "eur", "€"]),
-    "GBP": ("جنيه إسترليني", "British pound", ["جنيه استرليني", "جنيه إسترليني", "استرليني", "pound", "pounds", "gbp", "£"]),
-    "EGP": ("جنيه مصري", "Egyptian pound", ["جنيه مصري", "جنيه", "egp", "egyptian pound"]),
-    "AED": ("درهم إماراتي", "UAE dirham", ["درهم", "dirham", "dirhams", "aed"]),
-    "KWD": ("دينار كويتي", "Kuwaiti dinar", ["دينار كويتي", "kwd", "kuwaiti dinar"]),
-    "QAR": ("ريال قطري", "Qatari riyal", ["ريال قطري", "qar"]),
-    "BHD": ("دينار بحريني", "Bahraini dinar", ["دينار بحريني", "bhd"]),
-    "OMR": ("ريال عماني", "Omani rial", ["ريال عماني", "omr"]),
-    "JOD": ("دينار أردني", "Jordanian dinar", ["دينار اردني", "دينار أردني", "jod"]),
-    "TRY": ("ليرة تركية", "Turkish lira", ["ليرة تركية", "ليره تركيه", "ليرة", "lira", "turkish lira"]),
-    "JPY": ("ين ياباني", "Japanese yen", ["ين", "yen", "jpy"]),
-    "CNY": ("يوان صيني", "Chinese yuan", ["يوان", "yuan", "cny"]),
-    "INR": ("روبية هندية", "Indian rupee", ["روبية", "روبيه", "rupee", "rupees", "inr"]),
-}
 _ALIASES = sorted(((a, code) for code, (_, _, al) in CURRENCIES.items() for a in al), key=lambda x: -len(x[0]))
 _RATES: dict[str, tuple[float, dict]] = {}
 
 
-def find_currencies(text: str) -> list[str]:
+def _find(text: str) -> list[tuple[int, int, str]]:
     low, found = text.lower(), []
     for alias, code in _ALIASES:
         # Arabic words take attached prefixes: الدولار، بالريال، والريال، للدولار
@@ -91,18 +74,28 @@ def find_currencies(text: str) -> list[str]:
         for m in re.finditer(pattern, low):
             if not any(s <= m.start() < e for s, e, _ in found):
                 found.append((m.start(), m.end(), code))
-    return [code for _, _, code in sorted(found)]
+    return sorted(found)
+
+
+def find_currencies(text: str) -> list[str]:
+    return [code for _, _, code in _find(text)]
 
 
 def currency(question: str) -> ToolResult:
     lang = _lang(question)
-    codes = list(dict.fromkeys(find_currencies(question)))
+    question = question.translate(str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789"))
+    found = _find(question)
+    codes = list(dict.fromkeys(code for _, _, code in found))
     if not codes:
         return ToolResult(False, "حدد العملة، مثلاً: كم سعر الدولار بالريال" if lang == "ar" else "Name a currency, e.g. 100 USD to EUR")
-    src = codes[0]
-    dst = codes[1] if len(codes) > 1 else ("SAR" if src != "SAR" else "USD")
-    amount_m = re.search(r"\d+(?:[.,]\d+)?", question.translate(str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")))
+    amount_m = re.search(r"\d+(?:[.,]\d+)?", question)
     amount = float(amount_m.group().replace(",", ".")) if amount_m else 1.0
+    src = codes[0]
+    if amount_m:  # «how many euros for 500 dollars»: the currency right after the number is the source
+        after = [code for start, _, code in found if start >= amount_m.end()]
+        src = after[0] if after else src
+    others = [c for c in codes if c != src]
+    dst = others[0] if others else ("SAR" if src != "SAR" else "USD")
     try:
         stamp, rates = _RATES.get(src, (0, {}))
         if time.time() - stamp > 3600:

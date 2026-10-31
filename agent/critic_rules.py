@@ -29,9 +29,15 @@ def keyword_intent(msg: str) -> str | None:
     return best if scores[best] > 0 else None
 
 
-_MATH = re.compile(r"```|\d\s*([+\-*/^%×÷٪]|\*\*)\s*\d|\d\s*[%٪]|(\d.*(ضرب|زائد|ناقص|قسمة|على|times|plus|minus|divided))|"
+_MATH = re.compile(r"```|\d\s*([+\-*/^%×÷٪]|\*\*)\s*\d|\d\s*[%٪]|(\d.*(ضرب|زائد|ناقص|قسمة|على|times|plus|minus|divided))|((ضرب|اضرب|ضربت|اجمع|اطرح|اقسم)\D{0,8}\d)|"
                    r"(calculate|compute|solve|احسب|حل|كم يساوي|factorial|مضروب|sqrt|جذر|square root|fibonacci|"
                    r"فيبوناتشي|prime|الاولية|average|متوسط|sum of|مجموع)", re.IGNORECASE)
+# «ما هو التضخم» / «what is backpropagation»: a definition, not live data
+_DEFINE = re.compile(r"^(?:ما هو|ما هي|ماهو|ماهي|وش هو|وش هي|ايش هو|ايش هي|شو هو|اشرح|عرف|عرّف|وش يعني|ما معنى|"
+                     r"what is|what are|what's|explain|define|tell me about)\s", re.IGNORECASE)
+_TIME_WORDS = re.compile(r"الوقت|الساعة|الساعه|تاريخ|اليوم|بكرة|امس|أمس|هجري|ميلادي|\btime\b|\bdate\b|today|"
+                         r"tomorrow|yesterday|طقس|الجو|حرارة|weather|صلاة|الصلاة|اذان|أذان|prayer|"
+                         r"بالانجليزي|بالإنجليزي|بالعربي|in english|in arabic|translat|ترجم", re.IGNORECASE)
 _CODE_TASK = re.compile(r"\b(?:for|while) loop\b|\btry catch\b|\bhello world\b|حلقة (?:for|while)|لوب", re.IGNORECASE)
 # Unmistakable arithmetic: "15*7", "3 ^ 4", "25% of 80".
 _STRONG_MATH = re.compile(r"\d\s*([+*/^×÷]|\*\*)\s*\d|\d\s*[%٪]\s*(of|من)\s*\d", re.IGNORECASE)

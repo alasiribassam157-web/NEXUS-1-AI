@@ -11,11 +11,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600;700&family=Sora:wght@600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/ui/style.css" />
   <link rel="stylesheet" href="/ui/home.css" />
+  <link rel="stylesheet" href="/ui/cv.css" />
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="/" aria-label="NEXUS"><img src="/ui/logo.svg" alt="" class="mark" /><span class="word">NEXUS</span></a>
     <div class="top-actions">
+      <button id="btn-cv" class="tb-btn cv-btn" aria-label="CV">
+        <svg viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M9 13h6M9 17h4"/><circle cx="10" cy="9" r="1.2"/></svg><span data-t="cv"></span>
+      </button>
       <button id="btn-history" class="tb-btn" aria-label="conversations">
         <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/></svg><span data-t="history"></span>
       </button>
@@ -68,5 +72,6 @@
   <script src="/ui/history.js"></script>
   <script src="/ui/home.js"></script>
   <script src="/ui/chat.js"></script>
+  <script src="/ui/cv.js"></script>
 </body>
 </html>

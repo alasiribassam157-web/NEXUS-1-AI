@@ -15,6 +15,7 @@ from agent.stats import UsageStats
 from agent.tools import SAFE_MODE
 from core import trainer
 from core.training_job import TrainingJob
+from cv import api as cv_api
 
 ROOT = Path(__file__).resolve().parent
 DEVTOOLS = ROOT / "devtools"  # developer dashboard: kept on the laptop only (gitignored)
@@ -25,6 +26,7 @@ agent = NexusAgent()
 stats = UsageStats()
 job = TrainingJob(on_done=lambda name: agent.brains[name].reload())
 app.include_router(dev_api.build_router(agent, stats, job))
+app.include_router(cv_api.build_router())
 
 
 class ChatIn(BaseModel):

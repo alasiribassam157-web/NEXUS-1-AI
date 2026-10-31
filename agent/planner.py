@@ -50,6 +50,9 @@ def to_expression(text: str) -> str:
     text = text.lower()
     text = re.sub(_NUM + r"\s*[%٪]\s*(?:of|من)\s*" + _NUM, r"(\1/100*\2)", text)
     text = re.sub(r"(?:square root of|sqrt of|الجذر التربيعي\s*(?:لـ|ل|للعدد|ل\s)?)\s*" + _NUM, r"sqrt(\1)", text)
+    # verb first: «لو ضربت 23 في 19» / «اجمع 5 و 7»
+    text = re.sub(r"(?:ضربت|اضرب|ضرب)\s+" + _NUM + r"\s*(?:في|ب|x)\s*" + _NUM, r"\1*\2", text)
+    text = re.sub(r"(?:اجمع|جمعت)\s+" + _NUM + r"\s*(?:و|مع|\+)\s*" + _NUM, r"\1+\2", text)
     for words, op in _WORD_OPS:
         text = re.sub(_NUM + r"\s*(?:" + words + r")\s*" + _NUM, r"\1" + op + r"\2", text)
         text = re.sub(_NUM + r"\s*(?:" + words + r")\s*" + _NUM, r"\1" + op + r"\2", text)  # chains: 1+2+3

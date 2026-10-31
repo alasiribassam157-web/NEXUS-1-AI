@@ -65,6 +65,7 @@ function refreshSend() { $("send").disabled = busy || !$("input").value.trim(); 
 async function send(text) {
   text = (text || "").trim();
   if (!text || busy) return;
+  if (/سير[ةه] ذاتي|\bcv\b|\bresume\b/i.test(text) && text.length < 60) { $("input").value = ""; return openCV(); }
   setMode(true); toggleDrawer(false);
   busy = true;
   $("input").value = ""; autosize(); refreshSend();

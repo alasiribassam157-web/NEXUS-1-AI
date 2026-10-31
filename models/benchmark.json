@@ -1,42 +1,42 @@
 {
- "date": "2026-10-31 06:24",
- "total": 280,
- "passed": 279,
- "accuracy": 0.9964,
- "seconds": 605.9,
- "brain_alone": 0.9571,
+ "date": "2026-10-31 20:36",
+ "total": 310,
+ "passed": 310,
+ "accuracy": 1.0,
+ "seconds": 409.1,
+ "brain_alone": 0.9194,
  "by_intent": {
   "chat": {
-   "passed": 16,
-   "total": 16
+   "passed": 24,
+   "total": 24
   },
   "web": {
-   "passed": 93,
-   "total": 93
+   "passed": 98,
+   "total": 98
   },
   "python": {
-   "passed": 34,
-   "total": 34
+   "passed": 35,
+   "total": 35
   },
   "code": {
-   "passed": 41,
-   "total": 41
+   "passed": 46,
+   "total": 46
   },
   "weather": {
-   "passed": 13,
+   "passed": 14,
    "total": 14
   },
   "currency": {
-   "passed": 15,
-   "total": 15
+   "passed": 25,
+   "total": 25
   },
   "datetime": {
    "passed": 17,
    "total": 17
   },
   "units": {
-   "passed": 17,
-   "total": 17
+   "passed": 18,
+   "total": 18
   },
   "file": {
    "passed": 6,
@@ -55,12 +55,5 @@
    "total": 13
   }
  },
- "failures": [
-  {
-   "q": "Cairo weather",
-   "want": "weather",
-   "got": "weather",
-   "answer": "Weather service error: timed out"
-  }
- ]
+ "failures": []
 }

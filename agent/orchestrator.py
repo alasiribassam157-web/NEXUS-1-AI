@@ -4,6 +4,7 @@ import time
 
 from agent import composer, critic
 from agent.chat_replies import chat_reply
+from agent.companion import Companion
 from agent.dispatch import TOOL_NAMES, Dispatcher
 from agent.memory import ConversationMemory
 from agent.planner import make_plan
@@ -18,6 +19,7 @@ class NexusAgent:
         self.brain = BrainInference("router")
         self.tools = Dispatcher()
         self.memory = ConversationMemory()
+        self.companion = Companion()
 
     @property
     def brains(self) -> dict[str, BrainInference]:
@@ -27,7 +29,9 @@ class NexusAgent:
         """Answer a message; compound questions («…وكم عدد سكانها») are split and answered part by part."""
         parts = composer.split_compound(message)
         if len(parts) == 1:
-            return self._handle_one(message, allow_exec, session)
+            result = self._handle_one(message, allow_exec, session)
+            self.companion.note(session, message, result["answer"])
+            return result
         session = session or f"compound-{id(parts)}"  # follow-up parts need memory to resolve «سكانها»
         results = [self._handle_one(part, allow_exec, session) for part in parts]
         merged = dict(results[0])
@@ -63,6 +67,12 @@ class NexusAgent:
         neural = intent
         step("plan", f"Intent: {intent} ({conf:.0%})",
              " · ".join(f"{k} {v:.0%}" for k, v in sorted(dist.items(), key=lambda kv: -kv[1])[:4]))
+
+        # 1b. Conversation: the person talks about themselves, their mood, or just chats
+        talk = self.companion.respond(session, message, lang)
+        if talk:
+            step("result", "Conversation", "Personal reply (name, mood and the last 5 messages are remembered).")
+            return done(talk, "chat", conf)
 
         # 2. Critic reviews the classification itself
         intent, note = critic.review_intent(message, intent, conf)

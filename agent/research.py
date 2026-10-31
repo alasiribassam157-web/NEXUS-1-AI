@@ -3,6 +3,8 @@ import re
 
 import httpx
 
+from agent import kb
+
 HEADERS = {"User-Agent": "NEXUS-1-Agent/1.0 (https://github.com/topics/nexus-1-ai) python-httpx"}
 _DIACRITICS = re.compile(r"[ً-ْٰـ]")
 _PREFIXES = re.compile(
@@ -65,6 +67,9 @@ def lookup(question: str, lang: str) -> tuple[str, str, str] | None:
     if topic != question:
         attempts.append({"generator": "search", "gsrsearch": question, "gsrlimit": 1})
     sentences = answer_length(question)
+    hit = kb.lookup(question, topic, lang, sentences)   # local knowledge library first
+    if hit:
+        return hit
     with httpx.Client(timeout=15, headers=HEADERS, follow_redirects=True) as http:
         page = next((p for params in attempts if (p := _query(http, lang, params, sentences))), None)
         if not page and lang == "ar":

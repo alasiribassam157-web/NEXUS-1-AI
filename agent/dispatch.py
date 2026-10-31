@@ -1,5 +1,5 @@
 """Runs an approved plan with the right tool or skill."""
-from agent import composer, date_math, live_skills, math_engine, prayer, safe_math, translate, units
+from agent import composer, date_math, live_skills, markets, math_engine, prayer, safe_math, translate, units
 from agent.coder import CoderSkill
 from agent.tools import FileManagerTool, PythonExecutorTool, SystemTaskTool, ToolResult, WebResearchTool
 
@@ -42,6 +42,8 @@ class Dispatcher:
         if tool == "weather":
             return live_skills.weather(args["query"])
         if tool == "currency":
+            if markets.handles(args["query"]):
+                return markets.quote(args["query"])
             return live_skills.currency(args["query"])
         if tool == "datetime":
             if date_math.handles(args["query"]):

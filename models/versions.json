@@ -184,5 +184,41 @@
   "tokenizer": "bpe",
   "pretrain_steps": 12000,
   "pretrain_masked_acc": 0.2119
+ },
+ {
+  "version": 13,
+  "brain": "coder",
+  "size": "pretrained",
+  "params": 6798637,
+  "steps": 1257,
+  "total_steps": 25341,
+  "examples": 26775,
+  "custom_examples": 0,
+  "vocab": 8000,
+  "labels": 45,
+  "val_acc": 0.993,
+  "seconds": 780.01,
+  "date": "2026-10-31 19:59",
+  "tokenizer": "bpe",
+  "pretrain_steps": 12000,
+  "pretrain_masked_acc": 0.2119
+ },
+ {
+  "version": 14,
+  "brain": "router",
+  "size": "pretrained",
+  "params": 6790156,
+  "steps": 1914,
+  "total_steps": 27255,
+  "examples": 40813,
+  "custom_examples": 2,
+  "vocab": 8000,
+  "labels": 12,
+  "val_acc": 0.9982,
+  "seconds": 1170.11,
+  "date": "2026-10-31 20:18",
+  "tokenizer": "bpe",
+  "pretrain_steps": 12000,
+  "pretrain_masked_acc": 0.2119
  }
 ]

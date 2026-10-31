@@ -21,7 +21,7 @@ UNITS = {
     "oz": ("mass", 0.028349523, "أونصة", "ounces", ["oz", "ounce", "ounces", "اونصة", "أونصة", "اونصه"]),
     "t": ("mass", 1000, "طن", "tonnes", ["ton", "tons", "tonne", "tonnes", "طن", "اطنان"]),
     "l": ("volume", 1, "لتر", "liters", ["l", "liter", "liters", "litre", "litres", "لتر", "لترات"]),
-    "ml": ("volume", 0.001, "مليلتر", "milliliters", ["ml", "milliliter", "milliliters", "مل", "ملليلتر", "مليلتر"]),
+    "ml": ("volume", 0.001, "مليلتر", "milliliters", ["ml", "milliliter", "milliliters", "مل", "ملليلتر", "مليلتر", "مللي", "ملي"]),
     "gal": ("volume", 3.785411784, "جالون", "gallons", ["gallon", "gallons", "gal", "جالون", "غالون"]),
     "cup": ("volume", 0.2365882365, "كوب", "cups", ["cup", "cups", "كوب", "اكواب"]),
     "kmh": ("speed", 1 / 3.6, "كم/س", "km/h", ["km/h", "kph", "kmh", "كم/س", "كيلومتر في الساعة"]),
@@ -42,6 +42,7 @@ UNITS = {
 }
 _ALIASES = sorted(((a, u) for u, spec in UNITS.items() for a in spec[4]), key=lambda x: -len(x[0]))
 _NUM = re.compile(r"-?\d+(?:[.,]\d+)?")
+_HOW_MANY = re.compile(r"^(?:كم|how many)\s", re.I)
 
 
 def _find_units(text: str) -> list[tuple[int, str]]:
@@ -61,7 +62,8 @@ def is_conversion(question: str) -> bool:
     """A number plus two different units of the same kind, e.g. «1 inch to cm»."""
     text = question.translate(str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789"))
     found = list(dict.fromkeys(u for _, u in _find_units(text)))
-    return bool(_NUM.search(text)) and len(found) >= 2 and UNITS[found[0]][0] == UNITS[found[1]][0]
+    has_amount = bool(_NUM.search(text) or _HOW_MANY.match(text.strip()))
+    return has_amount and len(found) >= 2 and UNITS[found[0]][0] == UNITS[found[1]][0]
 
 
 def _to_temp(value: float, src: str, dst: str) -> float:
@@ -81,6 +83,8 @@ def convert(question: str) -> ToolResult:
         after = [u for pos, u in found if pos >= num.end()]
         if after:
             units = [after[0]] + [u for u in units if u != after[0]]
+    elif _HOW_MANY.match(text.strip()):  # «كم مللي في لتر» = how many ml in one litre
+        units = units[::-1]
     if len(units) < 2:
         return ToolResult(False, "اكتب الوحدتين، مثلاً: حول 10 كيلومتر الى ميل" if lang == "ar"
                           else "Name both units, e.g. convert 10 km to miles")

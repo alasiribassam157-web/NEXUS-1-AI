@@ -1,5 +1,6 @@
 """Training templates for the coder brain: which programming task is being asked for."""
 from agent.code_kb import TASKS
+from agent.code_kb.tasks_plus import PHRASES_PLUS
 
 CODE_TASKS = list(TASKS)
 
@@ -56,6 +57,7 @@ PHRASES = {
                      "ادمج النصوص"],
     "sum_max": ["sum a list", "find the max of a list", "largest number in array", "average of a list",
                 "مجموع قائمة", "اكبر رقم في القائمة", "اوجد المجموع"],
+    **PHRASES_PLUS,
 }
 
 TEMPLATES = {task: [w.replace("{x}", p) for p in PHRASES[task] for w in _WRAP] for task in CODE_TASKS}

@@ -1,4 +1,4 @@
-"""Official NEXUS benchmark: 280 realistic questions with the expected skill and answer.
+"""Official NEXUS benchmark: 310 realistic questions with the expected skill and answer.
 
 Run:  py -m tests.benchmark      (writes models/benchmark.json, shown in the developer dashboard)
 """
@@ -12,9 +12,10 @@ from core.trainer import MODELS
 from tests.benchmark_cases import CASES_V3
 from tests.benchmark_cases_v4 import CASES_V4
 from tests.benchmark_cases_v5 import CASES_V5
+from tests.benchmark_cases_v6 import CASES_V6
 
 # Run `py -m tests.benchmark v3` to score only the NEXUS-3 questions.
-CASES = CASES_V3 if "v3" in sys.argv[1:] else CASES_V3 + CASES_V4 + CASES_V5
+CASES = CASES_V3 if "v3" in sys.argv[1:] else CASES_V3 + CASES_V4 + CASES_V5 + CASES_V6
 
 
 def run(verbose: bool = True) -> dict:
