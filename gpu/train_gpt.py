@@ -93,6 +93,7 @@ def main() -> None:
                     "config": model.config, "size": args.size}, out / "ckpt.pt")
         print(f"  saved ({tag}) at step {step}", flush=True)
 
+    print("Training loop started (accumulating gradients)...", flush=True)
     model.train()
     t0 = time.time()
     while step < args.steps and time.time() < deadline:
@@ -109,8 +110,8 @@ def main() -> None:
         scaler.update()
         opt.zero_grad(set_to_none=True)
         step += 1
-        if step % 50 == 0:
-            tok_s = 50 * args.accum * args.batch * args.context / (time.time() - t0)
+        if step % 10 == 0:  # Changed from 50 to 10 so you see progress much faster
+            tok_s = 10 * args.accum * args.batch * args.context / (time.time() - t0)
             print(f"step {step}  loss {loss.item():.3f}  lr {lr_at(step):.2e}  {tok_s:,.0f} tok/s", flush=True)
             t0 = time.time()
         if step % 500 == 0:
