@@ -63,8 +63,10 @@ def main() -> None:
     # recomputes activations during backward instead of storing them — trades ~30% more compute
     # for much less VRAM, which is what lets "large" (350M) fit on a 16GB T4
     grad_checkpoint = device == "cuda" and not args.no_checkpoint
+    print("Loading model onto device...", flush=True)
     model = NexusGPT(info["vocab"], context=args.context, grad_checkpoint=grad_checkpoint,
                      **SIZES[args.size]).to(device)
+    print("Model loaded successfully.", flush=True)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.1)
     step = 0
     if resume:
