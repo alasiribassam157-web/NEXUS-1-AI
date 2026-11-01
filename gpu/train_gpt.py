@@ -43,8 +43,8 @@ def main() -> None:
     ap.add_argument("--out", default="/kaggle/working/nexus_gpt" if Path("/kaggle").exists() else "checkpoints/gpt")
     ap.add_argument("--hours", type=float, default=11.5)
     ap.add_argument("--steps", type=int, default=200_000)
-    ap.add_argument("--batch", type=int, default=8)
-    ap.add_argument("--accum", type=int, default=16)          # 8 × 16 × 512 ≈ 65k tokens per step
+    ap.add_argument("--batch", type=int, default=4)           # Reduced from 8 to fit "large" on T4
+    ap.add_argument("--accum", type=int, default=32)          # Increased from 16 to keep effective batch size
     ap.add_argument("--context", type=int, default=512)
     ap.add_argument("--lr", type=float, default=6e-4)
     ap.add_argument("--local", action="store_true")
